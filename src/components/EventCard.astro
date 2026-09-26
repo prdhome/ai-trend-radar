@@ -10,15 +10,18 @@ const { event, showRank = false } = Astro.props;
 const d = event.data;
 const href = `${import.meta.env.BASE_URL}events/${event.id}/`;
 const primary = d.sources[0];
+const featured = showRank && d.weekly_rank !== null;
 ---
-<article class="card">
+<article class={`card${featured ? ' featured' : ''}`}>
   <div class="badges">
-    {showRank && d.weekly_rank !== null && <span class="badge rank">#{d.weekly_rank}</span>}
     <span class={`badge ${d.status}`}>{STATUS_LABEL[d.status]}</span>
     <span class="badge">{CATEGORY_LABEL[d.category]}</span>
     {d.example && <span class="badge example">範例資料</span>}
   </div>
-  <h3><a href={href}>{d.title}</a></h3>
+  <h3>
+    {featured && <span class="rank-num">第{d.weekly_rank}名</span>}
+    <a href={href}>{d.title}</a>
+  </h3>
   <p><span class="label">事實</span>{d.summary}</p>
   <p><span class="label">對我</span>{d.impact_summary}（{IMPACT_LABEL[d.impact]}）</p>
   <div class="meta">

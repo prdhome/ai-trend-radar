@@ -20,7 +20,7 @@ const corrections = (await getCollection('corrections'))
   .slice(0, 5);
 const base = import.meta.env.BASE_URL;
 ---
-<Base>
+<Base wide>
   {hasExamples && (
     <p class="notice">目前顯示的是<strong>格式範例資料</strong>（內容純屬虛構），不是真實新聞。</p>
   )}
@@ -39,7 +39,7 @@ const base = import.meta.env.BASE_URL;
     <h2 id="h-weekly">本週重點</h2>
     {weekly.length === 0
       ? <p class="empty">本週尚未選出重點。</p>
-      : weekly.map((e) => <EventCard event={e} showRank />)}
+      : <div class="weekly-grid">{weekly.map((e) => <EventCard event={e} showRank />)}</div>}
   </section>
 
   <!-- 3. 分類與搜尋 -->
@@ -123,6 +123,7 @@ const base = import.meta.env.BASE_URL;
   const hours = Number(status?.dataset.staleHours ?? 48);
   if (last && Date.now() - new Date(last).getTime() > hours * 3600 * 1000) {
     document.getElementById('stale-warning')?.removeAttribute('hidden');
+    status?.classList.add('is-stale');
   }
 
   const list = document.getElementById('event-list')!;
