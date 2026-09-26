@@ -1,0 +1,111 @@
+/* 手機優先：預設即為窄螢幕排版，寬螢幕只放寬容器。禁止任何元素造成水平捲動（PRD §9 第 1 點）。 */
+:root {
+  --bg: #f7f7f5;
+  --surface: #ffffff;
+  --text: #1c1c1e;
+  --muted: #5f6368;
+  --border: #e2e2dd;
+  --accent: #1a5fb4;
+  --ok: #1e7a3c;
+  --ok-bg: #e6f4ea;
+  --warn: #8a5300;
+  --warn-bg: #fff4dc;
+  --danger: #b3261e;
+  --danger-bg: #fde7e4;
+  --info: #3b4f9c;
+  --info-bg: #e8ecfb;
+  --example-bg: #f1ecff;
+  --example: #5b3cc4;
+  --radius: 12px;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121214;
+    --surface: #1d1d20;
+    --text: #ececef;
+    --muted: #a3a3ad;
+    --border: #2e2e33;
+    --accent: #8ab4f8;
+    --ok: #81c995;
+    --ok-bg: #16301f;
+    --warn: #f6c26b;
+    --warn-bg: #3a2c10;
+    --danger: #f28b82;
+    --danger-bg: #3c1a17;
+    --info: #aab8f5;
+    --info-bg: #1f2542;
+    --example-bg: #2a2144;
+    --example: #c3b3ff;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.6 -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
+}
+a { color: var(--accent); }
+.wrap { max-width: 44rem; margin: 0 auto; padding: 0 16px; }
+header.site { padding: 16px 0 8px; }
+header.site h1 { font-size: 1.35rem; margin: 0; }
+header.site h1 a { color: inherit; text-decoration: none; }
+header.site p { margin: 2px 0 0; color: var(--muted); font-size: .875rem; }
+section { margin: 20px 0; }
+h2 { font-size: 1.1rem; margin: 0 0 10px; }
+.statusbar {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 10px 14px; font-size: .9rem;
+}
+.statusbar p { margin: 2px 0; }
+.stale { color: var(--warn); background: var(--warn-bg); border-radius: 8px; padding: 6px 10px; margin-top: 6px; }
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px 14px; margin: 0 0 10px;
+}
+.card h3 { font-size: 1rem; margin: 4px 0 6px; line-height: 1.4; }
+.card h3 a { color: inherit; text-decoration: none; }
+.card h3 a:hover { text-decoration: underline; }
+.card p { margin: 4px 0; font-size: .925rem; }
+.card .label { color: var(--muted); font-size: .8rem; margin-right: 4px; }
+.meta { color: var(--muted); font-size: .8rem; display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.badge { font-size: .75rem; padding: 1px 8px; border-radius: 999px; background: var(--info-bg); color: var(--info); white-space: nowrap; }
+.badge.confirmed { background: var(--ok-bg); color: var(--ok); }
+.badge.reported { background: var(--info-bg); color: var(--info); }
+.badge.unverified { background: var(--warn-bg); color: var(--warn); }
+.badge.corrected { background: var(--danger-bg); color: var(--danger); }
+.badge.example { background: var(--example-bg); color: var(--example); }
+.badge.rank { background: var(--text); color: var(--bg); }
+.filters { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button {
+  font: inherit; font-size: .85rem; padding: 6px 12px; min-height: 36px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+}
+.chips button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.filters input, .filters select {
+  font: inherit; font-size: 16px; /* iOS 小於 16px 會自動放大頁面 */
+  width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text);
+}
+.row { display: flex; gap: 8px; }
+.row > * { flex: 1; min-width: 0; }
+.empty { color: var(--muted); font-size: .9rem; padding: 8px 0; }
+.notice { background: var(--example-bg); color: var(--example); border-radius: 8px; padding: 8px 12px; font-size: .85rem; }
+footer.site { border-top: 1px solid var(--border); margin-top: 32px; padding: 16px 0 32px; color: var(--muted); font-size: .8rem; }
+footer.site p { margin: 2px 0; }
+footer.site code { font-size: .8rem; }
+article.event h1 { font-size: 1.3rem; line-height: 1.4; margin: 8px 0; }
+article.event dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; font-size: .9rem; margin: 12px 0; }
+article.event dt { color: var(--muted); }
+article.event dd { margin: 0; }
+article.event .body h2 { font-size: 1.05rem; margin-top: 20px; }
+article.event .body blockquote { margin: 0; padding: 8px 12px; background: var(--example-bg); color: var(--example); border-radius: 8px; }
+article.event .body blockquote p { margin: 0; }
+.sources li { margin-bottom: 6px; }
+[hidden] { display: none !important; }

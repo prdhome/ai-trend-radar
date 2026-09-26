@@ -1,0 +1,32 @@
+---
+import type { EventEntry } from '../lib/events';
+import { CATEGORY_LABEL, IMPACT_LABEL, SOURCE_TYPE_LABEL, STATUS_LABEL, formatDate } from '../lib/format';
+
+interface Props {
+  event: EventEntry;
+  showRank?: boolean;
+}
+const { event, showRank = false } = Astro.props;
+const d = event.data;
+const href = `${import.meta.env.BASE_URL}events/${event.id}/`;
+const primary = d.sources[0];
+---
+<article class="card">
+  <div class="badges">
+    {showRank && d.weekly_rank !== null && <span class="badge rank">#{d.weekly_rank}</span>}
+    <span class={`badge ${d.status}`}>{STATUS_LABEL[d.status]}</span>
+    <span class="badge">{CATEGORY_LABEL[d.category]}</span>
+    {d.example && <span class="badge example">範例資料</span>}
+  </div>
+  <h3><a href={href}>{d.title}</a></h3>
+  <p><span class="label">事實</span>{d.summary}</p>
+  <p><span class="label">對我</span>{d.impact_summary}（{IMPACT_LABEL[d.impact]}）</p>
+  <div class="meta">
+    <span>事件日期 {d.date_unknown ? '日期未知' : formatDate(d.event_at)}</span>
+    <span>查核 {formatDate(d.verified_at)}</span>
+    <span>
+      來源：<a href={primary.url} rel="noopener noreferrer">{primary.title}</a>
+      （{SOURCE_TYPE_LABEL[d.source_type]}）
+    </span>
+  </div>
+</article>

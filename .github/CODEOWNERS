@@ -1,0 +1,9 @@
+# PRD v0.2 §7.1：decisions/ 與 corrections/ 用機制保護，不只寫在 CLAUDE.md 當君子協定。
+# 需在 repo Settings → Branches（或 Rulesets）對 main 開啟「Require review from Code Owners」才會真正擋合併。
+# 第二層防線是 .github/workflows/check.yml 的 decision-approved label gate。
+
+content/decisions/**    @prdhome
+content/corrections/**  @prdhome
+
+# 保護機制本身也需要擁有者審核，避免 PR 順手把防線拆掉。
+.github/**              @prdhome

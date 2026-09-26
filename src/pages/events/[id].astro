@@ -1,0 +1,76 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import {
+  CATEGORY_LABEL,
+  IMPACT_LABEL,
+  SOURCE_TYPE_LABEL,
+  STATUS_LABEL,
+  formatDateTime,
+} from '../../lib/format';
+
+export async function getStaticPaths() {
+  const events = await getCollection('events');
+  return events.map((event) => ({ params: { id: event.id }, props: { event } }));
+}
+
+const { event } = Astro.props;
+const d = event.data;
+const { Content } = await render(event);
+const corrections = (await getCollection('corrections')).filter((c) => c.data.event_id === event.id);
+---
+<Base title={d.title}>
+  <p><a href={import.meta.env.BASE_URL}>← 回首頁</a></p>
+  <article class="event">
+    <div class="badges">
+      <span class={`badge ${d.status}`}>{STATUS_LABEL[d.status]}</span>
+      <span class="badge">{CATEGORY_LABEL[d.category]}</span>
+      {d.example && <span class="badge example">範例資料</span>}
+    </div>
+    <h1>{d.title}</h1>
+    <dl>
+      <dt>事件時間</dt>
+      <dd>{d.date_unknown ? '日期未知（無可靠發生日期）' : `台北時間 ${formatDateTime(d.event_at)}`}</dd>
+      <dt>查核時間</dt>
+      <dd>台北時間 {formatDateTime(d.verified_at)}</dd>
+      <dt>來源類型</dt>
+      <dd>{SOURCE_TYPE_LABEL[d.source_type]}</dd>
+      <dt>影響程度</dt>
+      <dd>{IMPACT_LABEL[d.impact]}</dd>
+    </dl>
+
+    <h2>原始來源</h2>
+    <ul class="sources">
+      {d.sources.map((s) => (
+        <li>
+          <a href={s.url} rel="noopener noreferrer">{s.title}</a>
+          {s.publisher && <span>（{s.publisher}）</span>}
+          <br /><small>{s.url}</small>
+        </li>
+      ))}
+    </ul>
+
+    <div class="body"><Content /></div>
+
+    {d.next_check && (
+      <>
+        <h2>下次需核對</h2>
+        <p>{d.next_check}</p>
+      </>
+    )}
+
+    {corrections.length > 0 && (
+      <>
+        <h2>修正紀錄</h2>
+        {corrections.map((c) => (
+          <div class="card">
+            <p><span class="label">原說法</span>{c.data.previous_claim}</p>
+            <p><span class="label">更正為</span>{c.data.corrected_claim}</p>
+            <p><span class="label">緣由</span>{c.data.reason}</p>
+            <p class="meta">更正於台北時間 {formatDateTime(c.data.corrected_at)}</p>
+          </div>
+        ))}
+      </>
+    )}
+  </article>
+</Base>
