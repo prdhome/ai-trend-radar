@@ -1,0 +1,62 @@
+# main 部署：只有合併進 main 的內容會上 GitHub Pages（PRD §5「部署狀態」）。
+# 建置時把合併 commit 的 SHA、合併時間、site_built_at 與來源 PR 連結寫進頁尾 build metadata，
+# 取代 v0.1 的 reviewed_by 欄位作為審核證據（PRD v0.2 §4.1）。
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  pull-requests: read
+
+# 同時只跑一個部署；不取消進行中的部署，避免 Pages 停在半套版本
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: 內容檢查（部署前再擋一次）
+        run: npm run validate
+      - name: 產生 build metadata（site_built_at / commit / PR）
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMIT_SHA: ${{ github.sha }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          export SITE_BUILT_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          export MERGED_AT="$(git show -s --format=%cI "$COMMIT_SHA")"
+          # 找出這個 commit 所屬的 PR；直接推 main（不該發生）或查不到時留空，頁尾就不顯示 PR 連結
+          export PR_URL="$(gh api "repos/${{ github.repository }}/commits/$COMMIT_SHA/pulls" --jq '.[0].html_url // empty' 2>/dev/null || true)"
+          npm run build-meta
+      - name: build
+        run: npm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

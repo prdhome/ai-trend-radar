@@ -1,0 +1,77 @@
+# PR 檢查：zod schema 驗證 + scripts/ 跨檔案檢查 + build，另有 decisions/corrections 的 label gate。
+name: check
+
+on:
+  pull_request:
+    branches: [main]
+    # labeled／unlabeled：加上 decision-approved label 後要重新跑 gate，否則 PR 會一直卡在舊的失敗結果
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  protected-paths:
+    name: decisions / corrections 需 decision-approved label
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: 檢查 PR 是否觸及受保護路徑
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'decision-approved') }}
+        run: |
+          set -euo pipefail
+          # git diff 失敗（例如取不到 base）時 set -e 直接讓 job 失敗：寧可誤擋，不可放行
+          touched="$(git diff --name-only "$BASE_SHA"..."$HEAD_SHA" -- content/decisions/ content/corrections/)"
+          if [ -z "$touched" ]; then
+            echo "PR 未觸及 content/decisions/** 或 content/corrections/**，略過。"
+            exit 0
+          fi
+          echo "PR 觸及受保護路徑："
+          echo "$touched" | sed 's/^/  - /'
+          if [ "$HAS_LABEL" = "true" ]; then
+            echo "已有 decision-approved label，放行。"
+            exit 0
+          fi
+          msg="此 PR 修改了 content/decisions/** 或 content/corrections/**，但沒有 decision-approved label。這兩個路徑存放使用者核准的決策與修正紀錄（PRD v0.2 §7.1），必須由 @prdhome 人工確認後手動加上 decision-approved label，本檢查才會通過。Claude／Codex 不得自行加這個 label。"
+          echo "::error title=缺少 decision-approved label::$msg"
+          {
+            echo "## ❌ 受保護路徑需要 decision-approved label"
+            echo
+            echo "$msg"
+            echo
+            echo "觸及的檔案："
+            echo "$touched" | sed 's/^/- `/; s/$/`/'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+  validate-and-build:
+    name: schema 驗證 + 跨檔案檢查 + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # zod schema（src/content/config.ts）＋ TypeScript：欄位型別／必填／列舉值不符即失敗
+      - name: astro check（zod schema + 型別）
+        run: npm run check
+      # 重複 id、壞內部連結 → 失敗；verified_at 超過 48 小時 → 只發 warning
+      - name: 跨檔案內容檢查
+        run: npm run validate
+      # warn-only：外部網站暫時失效不應擋合併
+      - name: 來源 URL 存活檢查（warn-only）
+        run: npm run check:urls
+        continue-on-error: true
+      - name: build
+        run: npm run build

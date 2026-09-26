@@ -1,0 +1,47 @@
+---
+import '../styles/global.css';
+import { getBuildMeta } from '../lib/build-meta';
+import { formatDateTime } from '../lib/format';
+
+interface Props {
+  title?: string;
+}
+const { title } = Astro.props;
+const meta = getBuildMeta();
+const base = import.meta.env.BASE_URL;
+const pageTitle = title ? `${title}｜AI Trend Radar` : 'AI Trend Radar';
+---
+<!doctype html>
+<html lang="zh-Hant-TW">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex" />
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="site">
+        <h1><a href={base}>AI Trend Radar</a></h1>
+        <p>模型、Coding Agent 與訂閱政策的查核後變化</p>
+      </header>
+      <main>
+        <slot />
+      </main>
+      <footer class="site" id="build-meta" data-site-built-at={meta.site_built_at}>
+        <p>site_built_at：台北時間 {formatDateTime(new Date(meta.site_built_at))}</p>
+        {meta.merged_at && <p>合併時間：台北時間 {formatDateTime(new Date(meta.merged_at))}</p>}
+        <p>
+          commit：
+          {meta.commit
+            ? meta.commit_url
+              ? <a href={meta.commit_url}><code>{meta.commit.slice(0, 7)}</code></a>
+              : <code>{meta.commit.slice(0, 7)}</code>
+            : <span>本機建置（非正式部署）</span>}
+        </p>
+        {meta.pr_url && <p>來源 PR：<a href={meta.pr_url}>{meta.pr_url.replace('https://github.com/', '')}</a></p>}
+        <p>本站只顯示合併至 main 並成功部署的內容；誰核准了什麼，以 GitHub PR 紀錄為準。</p>
+      </footer>
+    </div>
+  </body>
+</html>
