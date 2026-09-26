@@ -100,12 +100,40 @@ h2 { font-size: 1.1rem; margin: 0 0 10px; }
 footer.site { border-top: 1px solid var(--border); margin-top: 32px; padding: 16px 0 32px; color: var(--muted); font-size: .8rem; }
 footer.site p { margin: 2px 0; }
 footer.site code { font-size: .8rem; }
-article.event h1 { font-size: 1.3rem; line-height: 1.4; margin: 8px 0; }
-article.event dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; font-size: .9rem; margin: 12px 0; }
-article.event dt { color: var(--muted); }
-article.event dd { margin: 0; }
-article.event .body h2 { font-size: 1.05rem; margin-top: 20px; }
-article.event .body blockquote { margin: 0; padding: 8px 12px; background: var(--example-bg); color: var(--example); border-radius: 8px; }
-article.event .body blockquote p { margin: 0; }
-.sources li { margin-bottom: 6px; }
+/* 事件詳情頁：沿用首頁 .card / .badge / .meta / h2 的設計語彙，只補詳情頁特有的結構。 */
+.crumb { font-size: .875rem; margin: 4px 0 12px; }
+.crumb a { text-decoration: none; }
+.crumb a:hover { text-decoration: underline; }
+article.event > section { margin: 20px 0; }
+.event-head { padding: 14px 16px; }
+.event-head h1 { font-size: 1.3rem; line-height: 1.4; margin: 8px 0 12px; }
+.facts {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px;
+  margin: 0; padding-top: 12px; border-top: 1px solid var(--border);
+}
+.facts > div { min-width: 0; }
+.facts dt { color: var(--muted); font-size: .8rem; }
+.facts dd { margin: 2px 0 0; font-size: .925rem; }
+.facts time { white-space: nowrap; }
+.badge.impact-action { background: var(--danger-bg); color: var(--danger); }
+.badge.impact-evaluate { background: var(--warn-bg); color: var(--warn); }
+.badge.impact-monitor { background: var(--info-bg); color: var(--info); }
+.badge.impact-none { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+.sources { list-style: none; margin: 0; padding: 0; }
+.source-title { font-weight: 600; font-size: .95rem; line-height: 1.4; }
+.source-url { overflow-wrap: anywhere; word-break: break-all; }
+.prose { padding: 4px 16px 8px; font-size: .95rem; }
+.prose h2 { font-size: 1rem; margin: 0; padding: 12px 0 6px; }
+.prose h2 + * { margin-top: 0; }
+.prose h2:not(:first-child) { border-top: 1px solid var(--border); margin-top: 12px; }
+.prose ul, .prose ol { padding-left: 1.25em; margin: 0 0 8px; }
+.prose li { margin: 4px 0; }
+.prose p { margin: 6px 0; }
+.prose blockquote { margin: 8px 0; padding: 8px 12px; background: var(--example-bg); color: var(--example); border-radius: 8px; }
+.prose blockquote p { margin: 0; }
+.prose code { font-size: .875em; }
+.prose pre { overflow-x: auto; max-width: 100%; }
+.prose img { max-width: 100%; height: auto; }
+.prose table { display: block; max-width: 100%; overflow-x: auto; }
+@media (max-width: 359px) { .facts { grid-template-columns: 1fr; } }
 [hidden] { display: none !important; }
