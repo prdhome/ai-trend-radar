@@ -1,4 +1,5 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
+import { formatDate } from './format';
 
 export type EventEntry = CollectionEntry<'events'>;
 
@@ -24,4 +25,28 @@ export function pendingChecks(events: EventEntry[]): EventEntry[] {
 export function latestVerifiedAt(events: EventEntry[]): Date | null {
   if (events.length === 0) return null;
   return new Date(Math.max(...events.map((e) => e.data.verified_at.getTime())));
+}
+
+export interface WeekGroup {
+  /** 週一（台北時間）YYYY-MM-DD，作為 key。 */
+  key: string;
+  /** 例如「9/28–10/4」；明確區間，不寫「本週」，因為靜態建置時間不等於閱讀時間。 */
+  label: string;
+  events: EventEntry[];
+}
+
+/** 週一～週日分組（Asia/Taipei；GitHub Actions 跑在 UTC，所以先轉成台北日期再算星期）。新到舊。 */
+export function groupByWeek(events: EventEntry[]): WeekGroup[] {
+  const groups = new Map<string, WeekGroup>();
+  for (const e of events) {
+    const [y, m, d] = formatDate(e.data.event_at).split('-').map(Number);
+    const day = new Date(Date.UTC(y, m - 1, d));
+    const mon = new Date(day.getTime() - ((day.getUTCDay() + 6) % 7) * 86400000);
+    const sun = new Date(mon.getTime() + 6 * 86400000);
+    const key = mon.toISOString().slice(0, 10);
+    const md = (x: Date) => `${x.getUTCMonth() + 1}/${x.getUTCDate()}`;
+    if (!groups.has(key)) groups.set(key, { key, label: `${md(mon)}–${md(sun)}`, events: [] });
+    groups.get(key)!.events.push(e);
+  }
+  return [...groups.values()].sort((a, b) => b.key.localeCompare(a.key));
 }

@@ -22,8 +22,8 @@ const featured = showRank && d.weekly_rank !== null;
     {featured && <span class="rank-num">第{d.weekly_rank}名</span>}
     <a href={href}>{d.title}</a>
   </h3>
-  <p><span class="label">事實</span>{d.summary}</p>
-  <p><span class="label">對我</span>{d.impact_summary}（{IMPACT_LABEL[d.impact]}）</p>
+  <p class="line"><span class="label">事實</span><span>{d.summary}</span></p>
+  <p class="line"><span class="label">對我</span><span>{d.impact_summary}（{IMPACT_LABEL[d.impact]}）</span></p>
   <div class="meta">
     <span>事件日期 {d.date_unknown ? '日期未知' : formatDate(d.event_at)}</span>
     <span>查核 {formatDate(d.verified_at)}</span>

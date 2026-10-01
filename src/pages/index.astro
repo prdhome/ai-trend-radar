@@ -2,13 +2,14 @@
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import EventCard from '../components/EventCard.astro';
-import { getEvents, latestVerifiedAt, pendingChecks, weeklyHighlights } from '../lib/events';
+import { getEvents, groupByWeek, latestVerifiedAt, pendingChecks, weeklyHighlights } from '../lib/events';
 import { getBuildMeta } from '../lib/build-meta';
-import { STALE_HOURS, formatDate, formatDateTime } from '../lib/format';
+import { CATEGORY_LABEL, STALE_HOURS, STATUS_LABEL, formatDate, formatDateTime } from '../lib/format';
 
 const events = await getEvents();
 const weekly = weeklyHighlights(events);
 const pending = pendingChecks(events);
+const weeks = groupByWeek(events);
 const lastVerified = latestVerifiedAt(events);
 const meta = getBuildMeta();
 const builtAt = new Date(meta.site_built_at);
@@ -34,6 +35,37 @@ const base = import.meta.env.BASE_URL;
     <p class="stale" id="stale-warning" hidden>資料可能過期：超過 {STALE_HOURS} 小時沒有內容更新。</p>
   </section>
 
+  <!-- 1.5 最新動態：依週分組的時間線（週一～週日，台北時間），讓最新事件不必靠 weekly_rank 才看得到 -->
+  <section aria-labelledby="h-latest">
+    <h2 id="h-latest">最新動態</h2>
+    {weeks.length === 0
+      ? <p class="empty">尚無事件。</p>
+      : (
+        <div class="timeline">
+          {weeks.map((w) => (
+            <div class="tl-week">
+              <h3 class="tl-label"><span>{w.label}</span><small>{w.events.length} 則</small></h3>
+              <ul class="tl-list">
+                {w.events.map((e) => (
+                  <li>
+                    <time class="tl-date" datetime={e.data.event_at.toISOString()}>{e.data.date_unknown ? '日期未知' : formatDate(e.data.event_at).slice(5)}</time>
+                    <div class="tl-body">
+                      <a href={`${base}events/${e.id}/`}>{e.data.title}</a>
+                      <div class="badges">
+                        <span class={`badge ${e.data.status}`}>{STATUS_LABEL[e.data.status]}</span>
+                        <span class="badge">{CATEGORY_LABEL[e.data.category]}</span>
+                        {e.data.example && <span class="badge example">範例資料</span>}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+  </section>
+
   <!-- 2. 本週重點（v0.2 §6.2：content/events 中 weekly_rank 不為 null，依數字排序） -->
   <section aria-labelledby="h-weekly">
     <h2 id="h-weekly">本週重點</h2>
@@ -51,6 +83,7 @@ const base = import.meta.env.BASE_URL;
         <button type="button" data-cat="model" aria-pressed="false">模型</button>
         <button type="button" data-cat="agent" aria-pressed="false">Agent</button>
         <button type="button" data-cat="pricing" aria-pressed="false">價格政策</button>
+        <button type="button" data-cat="signal" aria-pressed="false">待觀察訊號</button>
       </div>
       <div class="row">
         <input type="search" id="q" placeholder="關鍵字搜尋" aria-label="關鍵字搜尋" />
