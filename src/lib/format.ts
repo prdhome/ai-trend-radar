@@ -55,4 +55,4 @@ export const IMPACT_LABEL: Record<string, string> = {
 };
 
 /** 首頁「資料可能過期」門檻（PRD §3.2）。 */
-export const STALE_HOURS = 48;
+export const STALE_HOURS = 96;
