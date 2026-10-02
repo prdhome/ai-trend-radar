@@ -15,11 +15,11 @@ const featured = showRank && d.weekly_rank !== null;
 <article class={`card${featured ? ' featured' : ''}`}>
   <div class="badges">
     <span class={`badge ${d.status}`}>{STATUS_LABEL[d.status]}</span>
-    <span class="badge">{CATEGORY_LABEL[d.category]}</span>
+    <span class={`badge cat cat-${d.category}`}>{CATEGORY_LABEL[d.category]}</span>
     {d.example && <span class="badge example">範例資料</span>}
   </div>
   <h3>
-    {featured && <span class="rank-num">第{d.weekly_rank}名</span>}
+    {featured && <span class="rank-num">第<b>{d.weekly_rank}</b>名</span>}
     <a href={href}>{d.title}</a>
   </h3>
   <p class="line"><span class="label">事實</span><span>{d.summary}</span></p>

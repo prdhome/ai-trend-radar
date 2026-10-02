@@ -6,7 +6,7 @@ verified_at: "2026-09-26T20:50:25+08:00"
 category: agent
 status: confirmed
 source_type: official
-weekly_rank: 2
+weekly_rank: null
 sources:
   - title: "Claude Cowork and chat are now one Claude"
     url: "https://claude.com/blog/cowork-is-now-claude"

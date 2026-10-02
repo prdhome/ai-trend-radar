@@ -1,0 +1,46 @@
+---
+/** 趨勢：每週事件數（依分類堆疊，舊到新）＋影響程度分布。週別沿用 groupByWeek 的台北時間分組。 */
+import type { EventEntry, WeekGroup } from '../lib/events';
+import { CATEGORY_LABEL, IMPACT_LABEL } from '../lib/format';
+import { CATEGORIES, IMPACTS } from '../content/config';
+
+interface Props {
+  events: EventEntry[];
+  weeks: WeekGroup[];
+}
+const { events, weeks } = Astro.props;
+
+const MAX_WEEKS = 8;
+const cols = weeks.slice(0, MAX_WEEKS).reverse();
+const peak = Math.max(1, ...cols.map((w) => w.events.length));
+const impacts = IMPACTS.map((k) => ({ k, n: events.filter((e) => e.data.impact === k).length }));
+---
+<div class="trend">
+  <div class="trend-chart" role="img"
+    aria-label={`每週事件數：${cols.map((w) => `${w.label} ${w.events.length} 則`).join('，')}`}>
+    {cols.map((w) => (
+      <div class="tcol">
+        <div class="tplot">
+        <span class="tcount">{w.events.length}</span>
+        <div class="tbar" style={`height:${Math.round((w.events.length / peak) * 80)}%`}>
+          {CATEGORIES.map((c) => {
+            const n = w.events.filter((e) => e.data.category === c).length;
+            return n > 0 && (
+              <span class={`tseg cat-${c}`} style={`flex-grow:${n}`} title={`${w.label}｜${CATEGORY_LABEL[c]} ${n} 則`}></span>
+            );
+          })}
+        </div>
+        </div>
+        <span class="tlabel">{w.label}</span>
+      </div>
+    ))}
+  </div>
+  <dl class="impact-row">
+    {impacts.map(({ k, n }) => (
+      <div class={`impact-stat impact-${k}${n === 0 ? ' is-zero' : ''}`}>
+        <dt>{IMPACT_LABEL[k]}</dt>
+        <dd>{n}</dd>
+      </div>
+    ))}
+  </dl>
+</div>

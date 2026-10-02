@@ -6,7 +6,7 @@ verified_at: "2026-09-26T16:41:11+08:00"
 category: model
 status: confirmed
 source_type: official
-weekly_rank: 1
+weekly_rank: null
 sources:
   - title: "Introducing Claude Opus 5.5"
     url: "https://www.anthropic.com/claude-opus-5-5"
