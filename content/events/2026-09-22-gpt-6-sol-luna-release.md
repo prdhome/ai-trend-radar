@@ -6,7 +6,7 @@ verified_at: "2026-09-26T20:50:25+08:00"
 category: model
 status: reported
 source_type: third_party
-weekly_rank: 3
+weekly_rank: null
 sources:
   - title: "Announcing GPT-6 Sol and GPT-6 Luna in the API, Codex and ChatGPT"
     url: "https://community.openai.com/t/announcing-gpt-6-sol-and-gpt-6-luna-in-the-api-codex-and-chatgpt/1399925"
