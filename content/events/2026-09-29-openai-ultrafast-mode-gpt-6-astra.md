@@ -3,7 +3,7 @@ id: 2026-09-29-openai-ultrafast-mode-gpt-6-astra
 title: "OpenAI API 新增 Ultrafast 服務層級（GPT-6 Astra）"
 event_at: "2026-09-29T00:00:00Z"
 verified_at: "2026-10-02T10:00:00+08:00"
-category: pricing
+category: signal
 status: confirmed
 source_type: official
 weekly_rank: null
@@ -27,7 +27,7 @@ next_check: "查 OpenAI 定價頁確認 Ultrafast 的實際價格，並留意是
 - 設定方式：`model` 設為 `gpt-6-astra`、`service_tier` 設為 `ultrafast`。GPT-5.6 Sol 僅為預覽存取。
 - 預設速率上限：Tier 1–3 為 500,000 TPM、Tier 4 為 1,000,000 TPM、Tier 5 為 5,000,000 TPM；更高需聯繫 OpenAI 帳號團隊。
 - 區域限制：僅支援美國資料駐留與全球處理，不支援 EU 或其他非美國區域端點。
-- 已讀取上述文件與更新紀錄頁全文（更新紀錄頁經摘要擷取）。
+- 讀取方式：以 WebFetch 取得文件與更新紀錄頁內容（為工具產生的摘要，非逐字全文）；速率上限、區域限制與模型名稱已於第二次擷取中逐字核對。官方原文為「broadly available for GPT-6 Astra, with preview access for GPT-5.6 Sol」，GPT-5.6 Sol 為文件原文用字，非轉錄錯誤，與既有 gpt-6-1-sol 事件無關。
 
 ## 對我的影響（推論）
 
@@ -37,3 +37,4 @@ next_check: "查 OpenAI 定價頁確認 Ultrafast 的實際價格，並留意是
 
 - 文件內容未寫出價格倍率或具體費率（僅提到有獨立的 input／cached input／cache write／output 價格），需對照官方定價頁。
 - 速度提升幅度沒有官方數字。
+- 事件時間僅依更新紀錄的日期（2026-09-29）設為 00:00Z，官方未提供確切時刻，時區為假設。

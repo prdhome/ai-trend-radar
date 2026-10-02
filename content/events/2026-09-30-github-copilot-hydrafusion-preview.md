@@ -23,7 +23,7 @@ next_check: "查 GitHub changelog 是否更新計費（premium request）說明�
 - 以研究預覽提供於 VS Code 1.140 以上（或 Insiders）與最新版 GitHub Copilot app，並由 GitHub Copilot CLI 擴大而來。
 - 僅限 Copilot Pro、Pro+、Business、Enterprise；Business／Enterprise 需由管理員啟用預覽功能。
 - 文章未提到新的定價層級；近期更新包含更高透明度、即時進度與長任務的狀態指示。
-- 已讀取該 GitHub changelog 全文（經摘要擷取）。
+- 讀取方式：以 WebFetch 取得該 changelog 內容（為工具產生的摘要，非逐字全文）；VS Code 1.140 以上與適用方案已逐字核對。
 
 ## 對我的影響（推論）
 
@@ -33,3 +33,4 @@ next_check: "查 GitHub changelog 是否更新計費（premium request）說明�
 
 - 對 premium request 額度的消耗方式未於文中說明。
 - 效能、品質無官方數據。
+- 事件時間僅依更新紀錄的日期（2026-09-29）設為 00:00Z，官方未提供確切時刻，時區為假設。
