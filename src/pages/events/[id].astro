@@ -27,7 +27,7 @@ const corrections = (await getCollection('corrections')).filter((c) => c.data.ev
     <header class="card event-head">
       <div class="badges">
         <span class={`badge ${d.status}`}>{STATUS_LABEL[d.status]}</span>
-        <span class="badge">{CATEGORY_LABEL[d.category]}</span>
+        <span class={`badge cat cat-${d.category}`}>{CATEGORY_LABEL[d.category]}</span>
         {d.example && <span class="badge example">範例資料</span>}
       </div>
       <h1>{d.title}</h1>

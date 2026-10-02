@@ -2,6 +2,8 @@
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import EventCard from '../components/EventCard.astro';
+import Radar from '../components/Radar.astro';
+import Trend from '../components/Trend.astro';
 import { getEvents, groupByWeek, latestVerifiedAt, pendingChecks, weeklyHighlights } from '../lib/events';
 import { getBuildMeta } from '../lib/build-meta';
 import { CATEGORY_LABEL, STALE_HOURS, STATUS_LABEL, formatDate, formatDateTime } from '../lib/format';
@@ -26,45 +28,32 @@ const base = import.meta.env.BASE_URL;
     <p class="notice">目前顯示的是<strong>格式範例資料</strong>（內容純屬虛構），不是真實新聞。</p>
   )}
 
-  <!-- 1. 版本狀態列 -->
-  <section class="statusbar" aria-label="版本狀態"
-    id="status" data-last-verified={lastVerified?.toISOString() ?? ''} data-stale-hours={STALE_HOURS}>
-    <p>資料查核至：{lastVerified ? `台北時間 ${formatDateTime(lastVerified)}` : '尚無資料'}</p>
-    <p>網站發布於：台北時間 {formatDateTime(builtAt)}</p>
-    {events.length === 0 && <p>本次查核無新項目。</p>}
-    <p class="stale" id="stale-warning" hidden>資料可能過期：超過 {STALE_HOURS} 小時沒有內容更新。</p>
-  </section>
+  <!-- 0. 儀表板首屏：左為事件雷達，右為版本狀態＋趨勢 -->
+  <div class="dash">
+    <section class="panel panel-radar" aria-labelledby="h-radar">
+      <h2 id="h-radar">事件雷達</h2>
+      <Radar events={events} weeks={weeks} />
+    </section>
 
-  <!-- 1.5 最新動態：依週分組的時間線（週一～週日，台北時間），讓最新事件不必靠 weekly_rank 才看得到 -->
-  <section aria-labelledby="h-latest">
-    <h2 id="h-latest">最新動態</h2>
-    {weeks.length === 0
-      ? <p class="empty">尚無事件。</p>
-      : (
-        <div class="timeline">
-          {weeks.map((w) => (
-            <div class="tl-week">
-              <h3 class="tl-label"><span>{w.label}</span><small>{w.events.length} 則</small></h3>
-              <ul class="tl-list">
-                {w.events.map((e) => (
-                  <li>
-                    <time class="tl-date" datetime={e.data.event_at.toISOString()}>{e.data.date_unknown ? '日期未知' : formatDate(e.data.event_at).slice(5)}</time>
-                    <div class="tl-body">
-                      <a href={`${base}events/${e.id}/`}>{e.data.title}</a>
-                      <div class="badges">
-                        <span class={`badge ${e.data.status}`}>{STATUS_LABEL[e.data.status]}</span>
-                        <span class="badge">{CATEGORY_LABEL[e.data.category]}</span>
-                        {e.data.example && <span class="badge example">範例資料</span>}
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+    <div class="dash-side">
+      <!-- 1. 版本狀態列 -->
+      <section class="statusbar" aria-label="版本狀態"
+        id="status" data-last-verified={lastVerified?.toISOString() ?? ''} data-stale-hours={STALE_HOURS}>
+        <p><span class="k">資料查核至</span><span class="v">{lastVerified ? `台北時間 ${formatDateTime(lastVerified)}` : '尚無資料'}</span></p>
+        <p><span class="k">網站發布於</span><span class="v">台北時間 {formatDateTime(builtAt)}</span></p>
+        {events.length === 0 && <p>本次查核無新項目。</p>}
+        <p class="stale" id="stale-warning" hidden>資料可能過期：超過 {STALE_HOURS} 小時沒有內容更新。</p>
+      </section>
+
+      <section class="panel" aria-labelledby="h-trend">
+        <div class="panel-head">
+          <h2 id="h-trend">趨勢</h2>
+          <span class="panel-note">共 {events.length} 則事件・每週事件數</span>
         </div>
-      )}
-  </section>
+        <Trend events={events} weeks={weeks} />
+      </section>
+    </div>
+  </div>
 
   <!-- 2. 本週重點（v0.2 §6.2：content/events 中 weekly_rank 不為 null，依數字排序） -->
   <section aria-labelledby="h-weekly">
@@ -74,16 +63,90 @@ const base = import.meta.env.BASE_URL;
       : <div class="weekly-grid">{weekly.map((e) => <EventCard event={e} showRank />)}</div>}
   </section>
 
+  <!-- 2.5 時間線（依週分組，週一～週日，台北時間）＋側欄：待查、修正 -->
+  <div class="split">
+    <section aria-labelledby="h-latest">
+      <h2 id="h-latest">時間線</h2>
+      {weeks.length === 0
+        ? <p class="empty">尚無事件。</p>
+        : (
+          <ol class="timeline">
+            {weeks.map((w) => (
+              <li class="tl-week">
+                <h3 class="tl-label"><span>{w.label}</span><small>{w.events.length} 則</small></h3>
+                <ul class="tl-list">
+                  {w.events.map((e) => (
+                    <li class={`cat-${e.data.category}`}>
+                      <time class="tl-date" datetime={e.data.event_at.toISOString()}>{e.data.date_unknown ? '日期未知' : formatDate(e.data.event_at).slice(5).replace('-', '/')}</time>
+                      <div class="tl-body">
+                        <a href={`${base}events/${e.id}/`}>{e.data.title}</a>
+                        <div class="badges">
+                          <span class={`badge ${e.data.status}`}>{STATUS_LABEL[e.data.status]}</span>
+                          <span class={`badge cat cat-${e.data.category}`}>{CATEGORY_LABEL[e.data.category]}</span>
+                          {e.data.example && <span class="badge example">範例資料</span>}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ol>
+        )}
+    </section>
+
+    <aside class="split-side">
+      <!-- 4. 近期修正 -->
+      <section aria-labelledby="h-corrections">
+        <h2 id="h-corrections">近期修正</h2>
+        {corrections.length === 0
+          ? <p class="empty">目前沒有修正紀錄。</p>
+          : corrections.map((c) => (
+              <article class="card">
+                <div class="badges"><span class="badge corrected">已更正</span></div>
+                <h3>
+                  <a href={`${base}events/${c.data.event_id}/`}>{eventTitles.get(c.data.event_id) ?? c.data.event_id}</a>
+                </h3>
+                <p><span class="label">原說法</span>{c.data.previous_claim}</p>
+                <p><span class="label">更正為</span>{c.data.corrected_claim}</p>
+                <p><span class="label">緣由</span>{c.data.reason}</p>
+                <div class="meta">
+                  <span>更正於 {formatDate(c.data.corrected_at)}</span>
+                  <span>新來源：<a href={c.data.sources[0].url} rel="noopener noreferrer">{c.data.sources[0].title}</a></span>
+                </div>
+              </article>
+            ))}
+      </section>
+
+      <!-- 5. 待查事項（最多 3 項，明確標「未驗證」） -->
+      <section aria-labelledby="h-pending">
+        <h2 id="h-pending">待查事項</h2>
+        {pending.length === 0
+          ? <p class="empty">目前沒有待查事項。</p>
+          : pending.map((e) => (
+              <article class="card">
+                <div class="badges">
+                  <span class="badge unverified">未驗證</span>
+                  {e.data.example && <span class="badge example">範例資料</span>}
+                </div>
+                <h3><a href={`${base}events/${e.id}/`}>{e.data.title}</a></h3>
+                {e.data.next_check && <p><span class="label">下一步</span>{e.data.next_check}</p>}
+              </article>
+            ))}
+      </section>
+    </aside>
+  </div>
+
   <!-- 3. 分類與搜尋 -->
   <section aria-labelledby="h-all">
-    <h2 id="h-all">分類與搜尋</h2>
+    <h2 id="h-all">全部事件</h2>
     <div class="filters">
       <div class="chips" role="group" aria-label="分類">
         <button type="button" data-cat="all" aria-pressed="true">全部</button>
-        <button type="button" data-cat="model" aria-pressed="false">模型</button>
-        <button type="button" data-cat="agent" aria-pressed="false">Agent</button>
-        <button type="button" data-cat="pricing" aria-pressed="false">價格政策</button>
-        <button type="button" data-cat="signal" aria-pressed="false">待觀察訊號</button>
+        <button type="button" data-cat="model" aria-pressed="false"><i class="swatch cat-model" aria-hidden="true"></i>模型</button>
+        <button type="button" data-cat="agent" aria-pressed="false"><i class="swatch cat-agent" aria-hidden="true"></i>Agent</button>
+        <button type="button" data-cat="pricing" aria-pressed="false"><i class="swatch cat-pricing" aria-hidden="true"></i>價格政策</button>
+        <button type="button" data-cat="signal" aria-pressed="false"><i class="swatch cat-signal" aria-hidden="true"></i>待觀察訊號</button>
       </div>
       <div class="row">
         <input type="search" id="q" placeholder="關鍵字搜尋" aria-label="關鍵字搜尋" />
@@ -109,44 +172,6 @@ const base = import.meta.env.BASE_URL;
     <p class="empty" id="no-match" hidden>沒有符合條件的事件。</p>
   </section>
 
-  <!-- 4. 近期修正 -->
-  <section aria-labelledby="h-corrections">
-    <h2 id="h-corrections">近期修正</h2>
-    {corrections.length === 0
-      ? <p class="empty">目前沒有修正紀錄。</p>
-      : corrections.map((c) => (
-          <article class="card">
-            <div class="badges"><span class="badge corrected">已更正</span></div>
-            <h3>
-              <a href={`${base}events/${c.data.event_id}/`}>{eventTitles.get(c.data.event_id) ?? c.data.event_id}</a>
-            </h3>
-            <p><span class="label">原說法</span>{c.data.previous_claim}</p>
-            <p><span class="label">更正為</span>{c.data.corrected_claim}</p>
-            <p><span class="label">緣由</span>{c.data.reason}</p>
-            <div class="meta">
-              <span>更正於 {formatDate(c.data.corrected_at)}</span>
-              <span>新來源：<a href={c.data.sources[0].url} rel="noopener noreferrer">{c.data.sources[0].title}</a></span>
-            </div>
-          </article>
-        ))}
-  </section>
-
-  <!-- 5. 待查事項（最多 3 項，明確標「未驗證」） -->
-  <section aria-labelledby="h-pending">
-    <h2 id="h-pending">待查事項</h2>
-    {pending.length === 0
-      ? <p class="empty">目前沒有待查事項。</p>
-      : pending.map((e) => (
-          <article class="card">
-            <div class="badges">
-              <span class="badge unverified">未驗證</span>
-              {e.data.example && <span class="badge example">範例資料</span>}
-            </div>
-            <h3><a href={`${base}events/${e.id}/`}>{e.data.title}</a></h3>
-            {e.data.next_check && <p><span class="label">下一步</span>{e.data.next_check}</p>}
-          </article>
-        ))}
-  </section>
 </Base>
 
 <script>
