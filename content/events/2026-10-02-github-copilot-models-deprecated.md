@@ -6,7 +6,7 @@ verified_at: "2026-10-03T10:30:00+08:00"
 category: pricing
 status: confirmed
 source_type: official
-weekly_rank: 4
+weekly_rank: null
 sources:
   - title: "Selected models in GitHub Copilot deprecated"
     url: "https://github.blog/changelog/2026-10-02-selected-models-in-github-copilot-deprecated"

@@ -6,7 +6,7 @@ verified_at: "2026-10-05T10:30:00+08:00"
 category: agent
 status: confirmed
 source_type: official
-weekly_rank: 5
+weekly_rank: null
 sources:
   - title: "Dynamic workflows in Copilot CLI and the Copilot app"
     url: "https://github.blog/changelog/2026-10-01-dynamic-workflows-in-copilot-cli-and-the-copilot-app"
