@@ -1,0 +1,59 @@
+---
+/**
+ * 每日事件量（台北時間），依分類堆疊。視窗＝資料中最新事件日往前 N 天（不用建置時間：靜態建置時間不等於閱讀時間）。
+ * 純 HTML/CSS 長條，文字不隨 SVG 縮放而糊掉；每根柱子都有可讀的數字與 title。
+ */
+import type { EventEntry } from '../lib/events';
+import { taipeiDayIndex } from '../lib/importance';
+import { CATEGORY_LABEL, dayIndexLabel } from '../lib/format';
+import { CATEGORIES } from '../content/config';
+
+interface Props {
+  events: EventEntry[];
+  refDay: number | null;
+  days?: number;
+}
+const { events, refDay, days = 21 } = Astro.props;
+
+const end = refDay ?? 0;
+const cols = Array.from({ length: days }, (_, i) => {
+  const day = end - (days - 1 - i);
+  const list = events.filter((e) => !e.data.date_unknown && taipeiDayIndex(e.data.event_at) === day);
+  const lab = dayIndexLabel(day);
+  return {
+    day,
+    ...lab,
+    n: list.length,
+    segs: CATEGORIES.map((c) => ({ c, n: list.filter((e) => e.data.category === c).length })).filter((s) => s.n > 0),
+    monday: lab.weekday === '週一',
+  };
+});
+const peak = Math.max(2, ...cols.map((c) => c.n));
+const total = cols.reduce((s, c) => s + c.n, 0);
+const busiest = cols.reduce((a, b) => (b.n > a.n ? b : a), cols[0]);
+const summary = `近 ${days} 天（${cols[0]?.md}–${cols.at(-1)?.md}）共 ${total} 則；` +
+  cols.filter((c) => c.n > 0).map((c) => `${c.md} ${c.n} 則`).join('、');
+---
+{refDay === null ? <p class="empty">尚無可繪製的事件日期。</p> : (
+  <figure class="daily">
+    <div class="daily-plot" role="img" aria-label={summary} style={`--peak:${peak}`}>
+      {[...Array(peak).keys()].map((k) => <span class="daily-grid" style={`--k:${k + 1}`} aria-hidden="true"></span>)}
+      {cols.map((c) => (
+        <div class={`dcol${c.monday ? ' is-mon' : ''}${c.day === end ? ' is-last' : ''}`} title={`${c.md}（${c.weekday}）${c.n} 則`}>
+          <div class="dbar" style={`--n:${c.n}`}>
+            {c.n > 0 && <span class="dnum">{c.n}</span>}
+            {c.segs.map((s) => <span class={`dseg cat-${s.c}`} style={`flex-grow:${s.n}`}></span>)}
+          </div>
+          <span class="dlab" aria-hidden="true">{c.monday || c.day === end ? c.md : ''}</span>
+        </div>
+      ))}
+    </div>
+    <figcaption class="chart-cap">
+      <span>近 {days} 天共 <b>{total}</b> 則・最多 {busiest.md} {busiest.n} 則</span>
+      <span class="legend-inline">
+        {CATEGORIES.map((c) => <span><i class={`swatch cat-${c}`} aria-hidden="true"></i>{CATEGORY_LABEL[c]}</span>)}
+      </span>
+      <span class="muted">軸標為週一與最新事件日</span>
+    </figcaption>
+  </figure>
+)}

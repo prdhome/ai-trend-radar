@@ -1,6 +1,8 @@
 ---
 import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
+import ImportanceBadge from '../../components/ImportanceBadge.astro';
+import { importanceMap } from '../../lib/importance';
 import {
   CATEGORY_LABEL,
   IMPACT_LABEL,
@@ -18,16 +20,21 @@ const { event } = Astro.props;
 const d = event.data;
 const { Content } = await render(event);
 const corrections = (await getCollection('corrections')).filter((c) => c.data.event_id === event.id);
+// 重要度的新近度以「全部事件中最新的事件日」為基準，所以要拿整個 collection 算。
+const imp = importanceMap(await getCollection('events')).get(event.id)!;
+const p = imp.parts;
+const signed = (n: number) => (n < 0 ? `−${-n}` : `+${n}`);
 ---
 <Base title={d.title}>
   <nav class="crumb" aria-label="頁面導覽"><a href={import.meta.env.BASE_URL}>← 回首頁</a></nav>
 
   <article class="event">
-    <!-- 標頭卡：與首頁 EventCard 共用 .card / .badges / .badge 樣式 -->
-    <header class="card event-head">
-      <div class="badges">
+    <!-- 標頭卡：與首頁事件卡共用 .ev-tags / .badge / .imp 視覺語彙 -->
+    <header class={`card event-head cat-${d.category}`} data-importance={imp.level}>
+      <div class="ev-tags">
+        <ImportanceBadge imp={imp} showScore />
         <span class={`badge ${d.status}`}>{STATUS_LABEL[d.status]}</span>
-        <span class={`badge cat cat-${d.category}`}>{CATEGORY_LABEL[d.category]}</span>
+        <span class="badge cat">{CATEGORY_LABEL[d.category]}</span>
         {d.example && <span class="badge example">範例資料</span>}
       </div>
       <h1>{d.title}</h1>
@@ -53,6 +60,16 @@ const corrections = (await getCollection('corrections')).filter((c) => c.data.ev
           <dd><span class={`badge impact-${d.impact}`}>{IMPACT_LABEL[d.impact]}</span></dd>
         </div>
       </dl>
+      <div class="imp-break" aria-label="重要度組成">
+        <span class="k">重要度 {imp.score} 分</span>
+        <span>影響 {signed(p.impact)}</span>
+        <span>排名 {signed(p.editorial)}</span>
+        {p.featured > 0 && <span>精選 {signed(p.featured)}</span>}
+        <span>新近度 {signed(p.recency)}</span>
+        {p.confidence < 0 && <span class="neg">可信度 {signed(p.confidence)}</span>}
+      </div>
+      <p class="fact-line"><span class="label">已查核事實</span>{d.summary}</p>
+      <p class="infer-line"><span class="tag-infer">推論</span>{d.impact_summary.replace(/^推論[:：]\s*/, '')}</p>
     </header>
 
     <section aria-labelledby="h-sources">
@@ -78,7 +95,7 @@ const corrections = (await getCollection('corrections')).filter((c) => c.data.ev
       <section aria-labelledby="h-next">
         <h2 id="h-next">下次需核對</h2>
         <div class="card">
-          <div class="badges"><span class="badge unverified">待查</span></div>
+          <div class="ev-tags"><span class="badge unverified">待查</span></div>
           <p>{d.next_check}</p>
         </div>
       </section>
@@ -89,7 +106,7 @@ const corrections = (await getCollection('corrections')).filter((c) => c.data.ev
         <h2 id="h-corrections">修正紀錄</h2>
         {corrections.map((c) => (
           <div class="card">
-            <div class="badges"><span class="badge corrected">已更正</span></div>
+            <div class="ev-tags"><span class="badge corrected">已更正</span></div>
             <p><span class="label">原說法</span>{c.data.previous_claim}</p>
             <p><span class="label">更正為</span>{c.data.corrected_claim}</p>
             <p><span class="label">緣由</span>{c.data.reason}</p>

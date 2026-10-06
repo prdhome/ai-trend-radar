@@ -1,5 +1,6 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import { formatDate } from './format';
+import { taipeiDayIndex } from './importance';
 
 export type EventEntry = CollectionEntry<'events'>;
 
@@ -49,4 +50,23 @@ export function groupByWeek(events: EventEntry[]): WeekGroup[] {
     groups.get(key)!.events.push(e);
   }
   return [...groups.values()].sort((a, b) => b.key.localeCompare(a.key));
+}
+
+export interface DayGroup {
+  /** 台北日序；`date_unknown` 的事件歸在 null。 */
+  day: number | null;
+  events: EventEntry[];
+}
+
+/** 依台北日期分組（新到舊），日期未知的事件放最後。時間線用。 */
+export function groupByDay(events: EventEntry[]): DayGroup[] {
+  const groups = new Map<number | null, EventEntry[]>();
+  for (const e of events) {
+    const key = e.data.date_unknown ? null : taipeiDayIndex(e.data.event_at);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(e);
+  }
+  return [...groups.entries()]
+    .map(([day, list]) => ({ day, events: list }))
+    .sort((a, b) => (b.day ?? -Infinity) - (a.day ?? -Infinity));
 }

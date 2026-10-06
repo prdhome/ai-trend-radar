@@ -20,8 +20,8 @@ const pageTitle = title ? `${title}｜AI Trend Radar` : 'AI Trend Radar';
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="robots" content="noindex" />
-    <meta name="theme-color" content="#eef2f3" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0c171e" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f3f5f7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b1117" media="(prefers-color-scheme: dark)" />
     <title>{pageTitle}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -39,7 +39,8 @@ const pageTitle = title ? `${title}｜AI Trend Radar` : 'AI Trend Radar';
           </svg>
           <span class="name">AI Trend Radar</span>
         </a></Brand>
-        <p>模型、Coding Agent 與訂閱政策的查核後變化</p>
+        <p class="tagline">模型、Coding Agent 與訂閱政策的查核後變化</p>
+        <slot name="status" />
       </header>
       <main>
         <slot />

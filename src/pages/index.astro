@@ -2,20 +2,47 @@
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import EventCard from '../components/EventCard.astro';
-import Radar from '../components/Radar.astro';
-import Trend from '../components/Trend.astro';
-import { getEvents, groupByWeek, latestVerifiedAt, pendingChecks, weeklyHighlights } from '../lib/events';
+import DailyChart from '../components/DailyChart.astro';
+import CategoryBars from '../components/CategoryBars.astro';
+import ImportancePanel from '../components/ImportancePanel.astro';
+import { getEvents, groupByDay, groupByWeek, latestVerifiedAt, pendingChecks, weeklyHighlights } from '../lib/events';
+import { IMPORTANCE_LABEL, IMPORTANCE_LEVELS, importanceMap, referenceDay } from '../lib/importance';
 import { getBuildMeta } from '../lib/build-meta';
-import { CATEGORY_LABEL, STALE_HOURS, STATUS_LABEL, formatDate, formatDateTime } from '../lib/format';
+import { CATEGORY_LABEL, STALE_HOURS, dayIndexLabel, formatDate, formatDateTime, formatMonthDay } from '../lib/format';
+import { CATEGORIES } from '../content/config';
 
 const events = await getEvents();
+const imp = importanceMap(events);
+const refDay = referenceDay(events);
 const weekly = weeklyHighlights(events);
 const pending = pendingChecks(events);
 const weeks = groupByWeek(events);
+const days = groupByDay(events);
+const latest = events.slice(0, 5);
 const lastVerified = latestVerifiedAt(events);
 const meta = getBuildMeta();
 const builtAt = new Date(meta.site_built_at);
 const hasExamples = events.some((e) => e.data.example);
+
+// KPI：最新一週＝最新事件所在的週（明確寫日期區間，不寫「本週」：靜態建置時間不等於閱讀時間）。
+const latestWeek = weeks[0];
+const prevWeek = weeks[1];
+const weekDelta = latestWeek && prevWeek ? latestWeek.events.length - prevWeek.events.length : null;
+const highCount = events.filter((e) => ['p1', 'p2'].includes(imp.get(e.id)!.level)).length;
+const p1Count = events.filter((e) => imp.get(e.id)!.level === 'p1').length;
+const unverifiedCount = events.filter((e) => e.data.status === 'unverified').length;
+const reportedCount = events.filter((e) => e.data.status === 'reported').length;
+
+// 時間線：相鄰兩個事件日之間若有空白日，插一列「無事件」讓密度一眼可見。
+type Row = { kind: 'day'; group: (typeof days)[number] } | { kind: 'gap'; from: number; to: number };
+const rows: Row[] = [];
+days.forEach((g, i) => {
+  const prev = days[i - 1];
+  if (prev && prev.day !== null && g.day !== null && prev.day - g.day > 1) {
+    rows.push({ kind: 'gap', from: g.day + 1, to: prev.day - 1 });
+  }
+  rows.push({ kind: 'day', group: g });
+});
 
 const eventTitles = new Map(events.map((e) => [e.id, e.data.title]));
 const corrections = (await getCollection('corrections'))
@@ -24,108 +51,168 @@ const corrections = (await getCollection('corrections'))
 const base = import.meta.env.BASE_URL;
 ---
 <Base wide>
+  <section slot="status" class="statusbar" aria-label="版本狀態"
+    id="status" data-last-verified={lastVerified?.toISOString() ?? ''} data-stale-hours={STALE_HOURS}>
+    <p><span class="dot" aria-hidden="true"></span><span class="k">資料查核至</span><span class="v">{lastVerified ? `台北時間 ${formatDateTime(lastVerified)}` : '尚無資料'}</span></p>
+    <p><span class="k">網站發布於</span><span class="v">台北時間 {formatDateTime(builtAt)}</span></p>
+    {events.length === 0 && <p>本次查核無新項目。</p>}
+    <p class="stale" id="stale-warning" hidden>資料可能過期：超過 {STALE_HOURS} 小時沒有內容更新。</p>
+  </section>
+
   {hasExamples && (
     <p class="notice">目前顯示的是<strong>格式範例資料</strong>（內容純屬虛構），不是真實新聞。</p>
   )}
 
-  <!-- 0. 儀表板首屏：左為事件雷達，右為版本狀態＋趨勢 -->
-  <div class="dash">
-    <section class="panel panel-radar" aria-labelledby="h-radar">
-      <h2 id="h-radar">事件雷達</h2>
-      <Radar events={events} weeks={weeks} />
-    </section>
-
-    <div class="dash-side">
-      <!-- 1. 版本狀態列 -->
-      <section class="statusbar" aria-label="版本狀態"
-        id="status" data-last-verified={lastVerified?.toISOString() ?? ''} data-stale-hours={STALE_HOURS}>
-        <p><span class="k">資料查核至</span><span class="v">{lastVerified ? `台北時間 ${formatDateTime(lastVerified)}` : '尚無資料'}</span></p>
-        <p><span class="k">網站發布於</span><span class="v">台北時間 {formatDateTime(builtAt)}</span></p>
-        {events.length === 0 && <p>本次查核無新項目。</p>}
-        <p class="stale" id="stale-warning" hidden>資料可能過期：超過 {STALE_HOURS} 小時沒有內容更新。</p>
-      </section>
-
-      <section class="panel" aria-labelledby="h-trend">
-        <div class="panel-head">
-          <h2 id="h-trend">趨勢</h2>
-          <span class="panel-note">共 {events.length} 則事件・每週事件數</span>
-        </div>
-        <Trend events={events} weeks={weeks} />
-      </section>
+  <!-- 1. KPI 列 -->
+  <section class="kpis" data-section="kpi" aria-label="關鍵指標">
+    <div class="kpi">
+      <p class="kpi-k">最新一週事件</p>
+      <p class="kpi-v">{latestWeek?.events.length ?? 0}<small>則</small></p>
+      <p class="kpi-s">
+        {latestWeek ? latestWeek.label : '—'}
+        {weekDelta !== null && <span class={`delta ${weekDelta > 0 ? 'up' : weekDelta < 0 ? 'down' : ''}`}>較前週 {weekDelta > 0 ? `▲${weekDelta}` : weekDelta < 0 ? `▼${-weekDelta}` : '持平'}</span>}
+      </p>
     </div>
-  </div>
-
-  <!-- 2. 本週重點（v0.2 §6.2：content/events 中 weekly_rank 不為 null，依數字排序） -->
-  <section aria-labelledby="h-weekly">
-    <h2 id="h-weekly">本週重點</h2>
-    {weekly.length === 0
-      ? <p class="empty">本週尚未選出重點。</p>
-      : <div class="weekly-grid">{weekly.map((e) => <EventCard event={e} showRank />)}</div>}
+    <div class="kpi">
+      <p class="kpi-k">高重要度（P1–P2）</p>
+      <p class="kpi-v">{highCount}<small>/ {events.length}</small></p>
+      <p class="kpi-s">其中 P1 關鍵 {p1Count} 則</p>
+    </div>
+    <div class={`kpi${unverifiedCount > 0 ? ' kpi-warn' : ''}`}>
+      <p class="kpi-k">待查核</p>
+      <p class="kpi-v">{unverifiedCount}<small>則未驗證</small></p>
+      <p class="kpi-s">另 {reportedCount} 則僅第三方報導</p>
+    </div>
+    <div class="kpi kpi-fresh" id="kpi-fresh">
+      <p class="kpi-k">資料新鮮度</p>
+      <p class="kpi-v" id="fresh-v">{lastVerified ? formatDate(lastVerified).slice(5).replace('-', '/') : '—'}</p>
+      <p class="kpi-s" id="fresh-s">{lastVerified ? `最後查核 ${formatDateTime(lastVerified).slice(11)}（台北）` : '尚無資料'}</p>
+    </div>
   </section>
 
-  <!-- 2.5 時間線（依週分組，週一～週日，台北時間）＋側欄：待查、修正 -->
-  <div class="split">
-    <section aria-labelledby="h-latest">
-      <h2 id="h-latest">時間線</h2>
-      {weeks.length === 0
-        ? <p class="empty">尚無事件。</p>
-        : (
-          <ol class="timeline">
-            {weeks.map((w) => (
-              <li class="tl-week">
-                <h3 class="tl-label"><span>{w.label}</span><small>{w.events.length} 則</small></h3>
-                <ul class="tl-list">
-                  {w.events.map((e) => (
-                    <li class={`cat-${e.data.category}`}>
-                      <time class="tl-date" datetime={e.data.event_at.toISOString()}>{e.data.date_unknown ? '日期未知' : formatDate(e.data.event_at).slice(5).replace('-', '/')}</time>
-                      <div class="tl-body">
-                        <a href={`${base}events/${e.id}/`}>{e.data.title}</a>
-                        <div class="badges">
-                          <span class={`badge ${e.data.status}`}>{STATUS_LABEL[e.data.status]}</span>
-                          <span class={`badge cat cat-${e.data.category}`}>{CATEGORY_LABEL[e.data.category]}</span>
-                          {e.data.example && <span class="badge example">範例資料</span>}
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ol>
-        )}
+  <!-- 2. 首屏儀表板：焦點／動態／重要度 -->
+  <div class="dash">
+    <section class="panel panel-focus" aria-labelledby="h-weekly" data-section="weekly">
+      <div class="panel-head">
+        <h2 id="h-weekly">本週重點</h2>
+        <span class="panel-note">編輯排名・{weekly.length} 則</span>
+      </div>
+      {weekly.length === 0
+        ? <p class="empty">本週尚未選出重點。</p>
+        : <div class="focus-list">{weekly.map((e) => <EventCard event={e} imp={imp.get(e.id)!} variant="focus" />)}</div>}
     </section>
 
-    <aside class="split-side">
-      <!-- 4. 近期修正 -->
-      <section aria-labelledby="h-corrections">
-        <h2 id="h-corrections">近期修正</h2>
-        {corrections.length === 0
-          ? <p class="empty">目前沒有修正紀錄。</p>
-          : corrections.map((c) => (
-              <article class="card">
-                <div class="badges"><span class="badge corrected">已更正</span></div>
-                <h3>
-                  <a href={`${base}events/${c.data.event_id}/`}>{eventTitles.get(c.data.event_id) ?? c.data.event_id}</a>
-                </h3>
-                <p><span class="label">原說法</span>{c.data.previous_claim}</p>
-                <p><span class="label">更正為</span>{c.data.corrected_claim}</p>
-                <p><span class="label">緣由</span>{c.data.reason}</p>
-                <div class="meta">
-                  <span>更正於 {formatDate(c.data.corrected_at)}</span>
-                  <span>新來源：<a href={c.data.sources[0].url} rel="noopener noreferrer">{c.data.sources[0].title}</a></span>
-                </div>
-              </article>
-            ))}
-      </section>
+    <section class="panel panel-activity" aria-labelledby="h-activity" data-section="activity">
+      <div class="panel-head">
+        <h2 id="h-activity">每日事件量</h2>
+        <span class="panel-note">台北時間・依類別堆疊</span>
+      </div>
+      <DailyChart events={events} refDay={refDay} />
+      <h3 class="sub-h">最新動態 <small>依事件日期</small></h3>
+      <ol class="latest">
+        {latest.map((e) => (
+          <li class={`cat-${e.data.category}`}>
+            <time datetime={e.data.event_at.toISOString()}>{e.data.date_unknown ? '日期未知' : formatMonthDay(e.data.event_at)}</time>
+            <span class={`lv lv-${imp.get(e.id)!.level}`} title={`重要度 ${imp.get(e.id)!.label}`}>{imp.get(e.id)!.level.toUpperCase()}</span>
+            <a href={`${base}events/${e.id}/`}>{e.data.title}</a>
+          </li>
+        ))}
+      </ol>
+    </section>
 
-      <!-- 5. 待查事項（最多 3 項，明確標「未驗證」） -->
-      <section aria-labelledby="h-pending">
-        <h2 id="h-pending">待查事項</h2>
+    <section class="panel panel-imp" aria-labelledby="h-imp" data-section="importance">
+      <div class="panel-head">
+        <h2 id="h-imp">重要度 × 類別</h2>
+        <span class="panel-note">由既有欄位推導</span>
+      </div>
+      <ImportancePanel events={events} imp={imp} />
+      <h3 class="sub-h">類別分布 <small>共 {events.length} 則</small></h3>
+      <CategoryBars events={events} />
+    </section>
+  </div>
+
+  <!-- 3. 時間線（日期軸，台北時間）＋側欄：待查、修正 -->
+  <div class="board">
+    <section class="panel panel-tl" aria-labelledby="h-tl" data-section="timeline">
+      <div class="panel-head">
+        <h2 id="h-tl">時間線</h2>
+        <span class="panel-note" id="tl-count" aria-live="polite">{events.length} 則事件</span>
+      </div>
+
+      <!-- 篩選列只在 JS 可用時出現；無 JS 時下方時間線本身就是完整內容。 -->
+      <div class="filters" id="filters" hidden>
+        <div class="chips" role="group" aria-label="類別">
+          <button type="button" data-cat="all" aria-pressed="true">全部</button>
+          {CATEGORIES.map((c) => (
+            <button type="button" data-cat={c} aria-pressed="false" class={`cat-${c}`}><i class="swatch" aria-hidden="true"></i>{CATEGORY_LABEL[c]}</button>
+          ))}
+        </div>
+        <div class="chips" role="group" aria-label="重要度">
+          <button type="button" data-imp="4" aria-pressed="true">所有等級</button>
+          <button type="button" data-imp="2" aria-pressed="false">P1–P2</button>
+          <button type="button" data-imp="1" aria-pressed="false">僅 P1</button>
+        </div>
+        <div class="row">
+          <input type="search" id="q" placeholder="關鍵字搜尋" aria-label="關鍵字搜尋" />
+          <select id="sort" aria-label="排序">
+            <option value="event">依日期</option>
+            <option value="score">依重要度</option>
+            <option value="verified">最近查核</option>
+          </select>
+        </div>
+      </div>
+
+      {events.length === 0 ? <p class="empty">尚無事件。</p> : (
+        <ol class="tl" id="tl">
+          {rows.map((r) => r.kind === 'gap' ? (
+            <li class="tl-gap" aria-hidden="true">
+              <span>{dayIndexLabel(r.from).md}{r.to > r.from && `–${dayIndexLabel(r.to).md}`}</span><span>無事件</span>
+            </li>
+          ) : (
+            <li class="tl-day" data-day={r.group.day ?? 'unknown'}>
+              <div class="tl-date">
+                {r.group.day === null ? <b>日期未知</b> : (
+                  <time datetime={dayIndexLabel(r.group.day).iso}>
+                    <b>{dayIndexLabel(r.group.day).md}</b><span>{dayIndexLabel(r.group.day).weekday}</span>
+                  </time>
+                )}
+                <span class="tl-density" aria-label={`${r.group.events.length} 則`}>
+                  {r.group.events.map((e) => <i class={`cat-${e.data.category}`}></i>)}
+                  <small>{r.group.events.length}</small>
+                </span>
+              </div>
+              <ul class="tl-items">
+                {r.group.events.map((e) => (
+                  <li
+                    class="tl-item"
+                    data-category={e.data.category}
+                    data-rank={imp.get(e.id)!.rank}
+                    data-score={imp.get(e.id)!.score}
+                    data-event={e.data.event_at.getTime()}
+                    data-verified={e.data.verified_at.getTime()}
+                    data-text={`${e.data.title} ${e.data.summary} ${e.data.impact_summary}`.toLowerCase()}
+                  >
+                    <EventCard event={e} imp={imp.get(e.id)!} />
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ol>
+      )}
+      <ul class="tl-flat" id="tl-flat" hidden></ul>
+      <p class="empty" id="no-match" hidden>沒有符合條件的事件。</p>
+    </section>
+
+    <aside class="board-side">
+      <!-- 待查事項（最多 3 項，明確標「未驗證」） -->
+      <section class="panel" aria-labelledby="h-pending" data-section="pending">
+        <div class="panel-head"><h2 id="h-pending">待查事項</h2><span class="panel-note">{pending.length} 項</span></div>
         {pending.length === 0
           ? <p class="empty">目前沒有待查事項。</p>
           : pending.map((e) => (
-              <article class="card">
-                <div class="badges">
+              <article class="side-item">
+                <div class="ev-tags">
                   <span class="badge unverified">未驗證</span>
                   {e.data.example && <span class="badge example">範例資料</span>}
                 </div>
@@ -134,86 +221,121 @@ const base = import.meta.env.BASE_URL;
               </article>
             ))}
       </section>
+
+      <!-- 近期修正 -->
+      <section class="panel" aria-labelledby="h-corrections" data-section="corrections">
+        <div class="panel-head"><h2 id="h-corrections">近期修正</h2><span class="panel-note">{corrections.length} 筆</span></div>
+        {corrections.length === 0
+          ? <p class="empty">目前沒有修正紀錄。</p>
+          : corrections.map((c) => (
+              <article class="side-item">
+                <div class="ev-tags"><span class="badge corrected">已更正</span></div>
+                <h3>
+                  <a href={`${base}events/${c.data.event_id}/`}>{eventTitles.get(c.data.event_id) ?? c.data.event_id}</a>
+                </h3>
+                <p><span class="label">原說法</span>{c.data.previous_claim}</p>
+                <p><span class="label">更正為</span>{c.data.corrected_claim}</p>
+                <p><span class="label">緣由</span>{c.data.reason}</p>
+                <p class="side-meta">
+                  更正於 {formatDate(c.data.corrected_at)}・新來源：<a href={c.data.sources[0].url} rel="noopener noreferrer">{c.data.sources[0].title}</a>
+                </p>
+              </article>
+            ))}
+      </section>
+
+      <section class="panel panel-legend" aria-label="閱讀說明">
+        <h2 class="sub-h">怎麼讀這個儀表板</h2>
+        <ul class="howto">
+          <li><span class="badge confirmed">官方已確認</span><span class="badge reported">第三方報導</span><span class="badge unverified">未驗證</span><span class="badge corrected">已更正</span>：事實的可信度。</li>
+          <li><span class="tag-infer">推論</span>：對我的影響是推論，不是已證實事實。</li>
+          <li>重要度 {IMPORTANCE_LEVELS.map((lv) => `${lv.toUpperCase()} ${IMPORTANCE_LABEL[lv]}`).join('／')}：排序用的推導分數，算法見「重要度 × 類別」。</li>
+        </ul>
+      </section>
     </aside>
   </div>
-
-  <!-- 3. 分類與搜尋 -->
-  <section aria-labelledby="h-all">
-    <h2 id="h-all">全部事件</h2>
-    <div class="filters">
-      <div class="chips" role="group" aria-label="分類">
-        <button type="button" data-cat="all" aria-pressed="true">全部</button>
-        <button type="button" data-cat="model" aria-pressed="false"><i class="swatch cat-model" aria-hidden="true"></i>模型</button>
-        <button type="button" data-cat="agent" aria-pressed="false"><i class="swatch cat-agent" aria-hidden="true"></i>Agent</button>
-        <button type="button" data-cat="pricing" aria-pressed="false"><i class="swatch cat-pricing" aria-hidden="true"></i>價格政策</button>
-        <button type="button" data-cat="signal" aria-pressed="false"><i class="swatch cat-signal" aria-hidden="true"></i>待觀察訊號</button>
-      </div>
-      <div class="row">
-        <input type="search" id="q" placeholder="關鍵字搜尋" aria-label="關鍵字搜尋" />
-        <select id="sort" aria-label="排序">
-          <option value="event">依事件日期</option>
-          <option value="verified">最近更新</option>
-        </select>
-      </div>
-    </div>
-    <div id="event-list">
-      {events.map((e) => (
-        <div
-          class="event-item"
-          data-category={e.data.category}
-          data-event={e.data.event_at.getTime()}
-          data-verified={e.data.verified_at.getTime()}
-          data-text={`${e.data.title} ${e.data.summary} ${e.data.impact_summary}`.toLowerCase()}
-        >
-          <EventCard event={e} />
-        </div>
-      ))}
-    </div>
-    <p class="empty" id="no-match" hidden>沒有符合條件的事件。</p>
-  </section>
-
 </Base>
 
 <script>
-  // 過期判斷必須在「閱讀當下」算，靜態建置時間無法代表使用者打開頁面的時間。
+  // 過期判斷與新鮮度必須在「閱讀當下」算，靜態建置時間無法代表使用者打開頁面的時間。
   const status = document.getElementById('status');
   const last = status?.dataset.lastVerified;
   const hours = Number(status?.dataset.staleHours ?? 96);
-  if (last && Date.now() - new Date(last).getTime() > hours * 3600 * 1000) {
-    document.getElementById('stale-warning')?.removeAttribute('hidden');
-    status?.classList.add('is-stale');
-  }
-
-  const list = document.getElementById('event-list')!;
-  const items = Array.from(list.querySelectorAll<HTMLElement>('.event-item'));
-  const chips = Array.from(document.querySelectorAll<HTMLButtonElement>('.chips button'));
-  const q = document.getElementById('q') as HTMLInputElement;
-  const sort = document.getElementById('sort') as HTMLSelectElement;
-  const noMatch = document.getElementById('no-match')!;
-  let cat = 'all';
-
-  function apply() {
-    const term = q.value.trim().toLowerCase();
-    const key = sort.value === 'verified' ? 'verified' : 'event';
-    items
-      .sort((a, b) => Number(b.dataset[key]) - Number(a.dataset[key]))
-      .forEach((el) => list.appendChild(el));
-    let shown = 0;
-    for (const el of items) {
-      const ok = (cat === 'all' || el.dataset.category === cat) && (!term || el.dataset.text!.includes(term));
-      el.hidden = !ok;
-      if (ok) shown++;
+  if (last) {
+    const age = (Date.now() - new Date(last).getTime()) / 3600000;
+    const v = document.getElementById('fresh-v');
+    const s = document.getElementById('fresh-s');
+    if (v && s && age >= 0) {
+      v.innerHTML = age < 48 ? `${Math.floor(age)}<small>小時前</small>` : `${Math.floor(age / 24)}<small>天前</small>`;
+      s.textContent = age > hours ? `已超過 ${hours} 小時未更新` : `${hours} 小時內視為新鮮`;
     }
-    noMatch.hidden = shown > 0;
+    if (age > hours) {
+      document.getElementById('stale-warning')?.removeAttribute('hidden');
+      status?.classList.add('is-stale');
+      document.getElementById('kpi-fresh')?.classList.add('kpi-warn');
+    }
   }
 
-  chips.forEach((b) =>
-    b.addEventListener('click', () => {
-      cat = b.dataset.cat ?? 'all';
-      chips.forEach((c) => c.setAttribute('aria-pressed', String(c === b)));
-      apply();
-    }),
-  );
-  q.addEventListener('input', apply);
-  sort.addEventListener('change', apply);
+  const tl = document.getElementById('tl');
+  const flat = document.getElementById('tl-flat');
+  const filters = document.getElementById('filters');
+  if (tl && flat && filters) {
+    filters.hidden = false;
+    const items = Array.from(tl.querySelectorAll<HTMLElement>('.tl-item'));
+    const homes = new Map(items.map((el) => [el, el.parentElement!]));
+    const catBtns = Array.from(filters.querySelectorAll<HTMLButtonElement>('[data-cat]'));
+    const impBtns = Array.from(filters.querySelectorAll<HTMLButtonElement>('[data-imp]'));
+    const q = document.getElementById('q') as HTMLInputElement;
+    const sort = document.getElementById('sort') as HTMLSelectElement;
+    const noMatch = document.getElementById('no-match')!;
+    const count = document.getElementById('tl-count')!;
+    let cat = 'all';
+    let maxRank = 4;
+
+    const apply = () => {
+      const term = q.value.trim().toLowerCase();
+      const mode = sort.value;
+      let shown = 0;
+      for (const el of items) {
+        const ok =
+          (cat === 'all' || el.dataset.category === cat) &&
+          Number(el.dataset.rank) <= maxRank &&
+          (!term || el.dataset.text!.includes(term));
+        el.hidden = !ok;
+        if (ok) shown++;
+      }
+      if (mode === 'event') {
+        // 回到時間線：每則事件放回自己的日期列（原始順序即新到舊）。
+        for (const el of items) homes.get(el)!.appendChild(el);
+        tl.hidden = false;
+        flat.hidden = true;
+      } else {
+        const key = mode === 'score' ? 'score' : 'verified';
+        [...items]
+          .sort((a, b) => Number(b.dataset[key]) - Number(a.dataset[key]) || Number(b.dataset.event) - Number(a.dataset.event))
+          .forEach((el) => flat.appendChild(el));
+        tl.hidden = true;
+        flat.hidden = false;
+      }
+      const filtered = cat !== 'all' || maxRank < 4 || term !== '';
+      tl.classList.toggle('is-filtered', filtered);
+      tl.querySelectorAll<HTMLElement>('.tl-day').forEach((d) => {
+        d.hidden = mode === 'event' && !d.querySelector('.tl-item:not([hidden])');
+      });
+      noMatch.hidden = shown > 0;
+      count.textContent = filtered ? `顯示 ${shown} / ${items.length} 則` : `${items.length} 則事件`;
+    };
+
+    const bindGroup = (btns: HTMLButtonElement[], set: (b: HTMLButtonElement) => void) =>
+      btns.forEach((b) =>
+        b.addEventListener('click', () => {
+          set(b);
+          btns.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+          apply();
+        }),
+      );
+    bindGroup(catBtns, (b) => (cat = b.dataset.cat ?? 'all'));
+    bindGroup(impBtns, (b) => (maxRank = Number(b.dataset.imp ?? 4)));
+    q.addEventListener('input', apply);
+    sort.addEventListener('change', apply);
+  }
 </script>

@@ -1,0 +1,23 @@
+---
+/** 類別分布：水平長條＋文字標籤與數字（不只靠顏色）。 */
+import type { EventEntry } from '../lib/events';
+import { CATEGORY_LABEL } from '../lib/format';
+import { CATEGORIES } from '../content/config';
+
+interface Props {
+  events: EventEntry[];
+}
+const { events } = Astro.props;
+const rows = CATEGORIES.map((c) => ({ c, n: events.filter((e) => e.data.category === c).length }));
+const max = Math.max(1, ...rows.map((r) => r.n));
+const total = events.length || 1;
+---
+<ul class="hbars" aria-label="類別分布">
+  {rows.map((r) => (
+    <li class={`cat-${r.c}${r.n === 0 ? ' is-zero' : ''}`}>
+      <span class="hb-label"><i class="swatch" aria-hidden="true"></i>{CATEGORY_LABEL[r.c]}</span>
+      <span class="hb-track" aria-hidden="true"><span class="hb-fill" style={`width:${(r.n / max) * 100}%`}></span></span>
+      <span class="hb-num"><b>{r.n}</b><small>{Math.round((r.n / total) * 100)}%</small></span>
+    </li>
+  ))}
+</ul>

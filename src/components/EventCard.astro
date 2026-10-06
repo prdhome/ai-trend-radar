@@ -1,35 +1,50 @@
 ---
+/**
+ * 事件卡。兩種密度：
+ * - `focus`：首頁「本週重點」，多一行推論（明確標「推論」）與來源。
+ * - `row`：時間線列，只有標題、日期、徽章與一句已查核事實。
+ * 「事實 vs 推論」：summary 是已查核事實；impact_summary 一律掛「推論」標籤，且視覺上降一級（斜體、淡色）。
+ */
 import type { EventEntry } from '../lib/events';
-import { CATEGORY_LABEL, IMPACT_LABEL, SOURCE_TYPE_LABEL, STATUS_LABEL, formatDate } from '../lib/format';
+import type { Importance } from '../lib/importance';
+import ImportanceBadge from './ImportanceBadge.astro';
+import { CATEGORY_LABEL, IMPACT_LABEL, SOURCE_TYPE_LABEL, STATUS_LABEL, formatMonthDay } from '../lib/format';
 
 interface Props {
   event: EventEntry;
-  showRank?: boolean;
+  imp: Importance;
+  variant?: 'focus' | 'row';
 }
-const { event, showRank = false } = Astro.props;
+const { event, imp, variant = 'row' } = Astro.props;
 const d = event.data;
 const href = `${import.meta.env.BASE_URL}events/${event.id}/`;
 const primary = d.sources[0];
-const featured = showRank && d.weekly_rank !== null;
+const date = d.date_unknown ? '日期未知' : formatMonthDay(d.event_at);
 ---
-<article class={`card${featured ? ' featured' : ''}`}>
-  <div class="badges">
-    <span class={`badge ${d.status}`}>{STATUS_LABEL[d.status]}</span>
-    <span class={`badge cat cat-${d.category}`}>{CATEGORY_LABEL[d.category]}</span>
-    {d.example && <span class="badge example">範例資料</span>}
-  </div>
-  <h3>
-    {featured && <span class="rank-num">第<b>{d.weekly_rank}</b>名</span>}
-    <a href={href}>{d.title}</a>
-  </h3>
-  <p class="line"><span class="label">事實</span><span>{d.summary}</span></p>
-  <p class="line"><span class="label">對我</span><span>{d.impact_summary}（{IMPACT_LABEL[d.impact]}）</span></p>
-  <div class="meta">
-    <span>事件日期 {d.date_unknown ? '日期未知' : formatDate(d.event_at)}</span>
-    <span>查核 {formatDate(d.verified_at)}</span>
-    <span>
-      來源：<a href={primary.url} rel="noopener noreferrer">{primary.title}</a>
-      （{SOURCE_TYPE_LABEL[d.source_type]}）
-    </span>
+<article class={`ev ev-${variant} cat-${d.category}`} data-importance={imp.level}>
+  {variant === 'focus' && d.weekly_rank !== null && (
+    <span class="ev-rank" aria-label={`本週第 ${d.weekly_rank} 名`}>{d.weekly_rank}</span>
+  )}
+  <div class="ev-main">
+    <div class="ev-tags">
+      <ImportanceBadge imp={imp} showScore={variant === 'focus'} />
+      <span class={`badge ${d.status}`}>{STATUS_LABEL[d.status]}</span>
+      <span class="badge cat">{CATEGORY_LABEL[d.category]}</span>
+      {d.example && <span class="badge example">範例資料</span>}
+      {variant === 'focus' && (
+        <time class="ev-date" datetime={d.event_at.toISOString()}>{date}</time>
+      )}
+    </div>
+    <h3 class="ev-title"><a href={href}>{d.title}</a></h3>
+    <p class="ev-fact">{d.summary}</p>
+    {variant === 'focus' && (
+      <>
+        <p class="ev-infer"><span class="tag-infer">推論</span>{d.impact_summary.replace(/^推論[:：]\s*/, '')}<span class="ev-impact">（{IMPACT_LABEL[d.impact]}）</span></p>
+        <p class="ev-src">
+          來源：<a href={primary.url} rel="noopener noreferrer">{primary.publisher ?? primary.title}</a>
+          <span>・{SOURCE_TYPE_LABEL[d.source_type]}</span>
+        </p>
+      </>
+    )}
   </div>
 </article>
