@@ -56,3 +56,21 @@ export const IMPACT_LABEL: Record<string, string> = {
 
 /** 首頁「資料可能過期」門檻（PRD §3.2）。 */
 export const STALE_HOURS = 96;
+
+const WEEKDAY = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+
+/** M/D（台北時間），時間線與圖表軸標籤用。 */
+export function formatMonthDay(d: Date): string {
+  const p = parts(d);
+  return `${Number(p.month)}/${Number(p.day)}`;
+}
+
+/** 台北日序（見 lib/importance.ts 的 taipeiDayIndex）→ M/D 與星期。日序本身已是台北日期，這裡只做曆法換算。 */
+export function dayIndexLabel(idx: number): { md: string; weekday: string; iso: string } {
+  const d = new Date(idx * 86400000);
+  return {
+    md: `${d.getUTCMonth() + 1}/${d.getUTCDate()}`,
+    weekday: WEEKDAY[d.getUTCDay()],
+    iso: d.toISOString().slice(0, 10),
+  };
+}

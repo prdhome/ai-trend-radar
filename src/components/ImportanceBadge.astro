@@ -1,0 +1,21 @@
+---
+/**
+ * 重要度徽章：4 格強度刻度＋「P1 關鍵」文字。等級靠「填滿格數＋文字＋明暗」三重編碼，不只靠顏色（色盲友善）。
+ * 分數怎麼來見 lib/importance.ts。
+ */
+import type { Importance } from '../lib/importance';
+
+interface Props {
+  imp: Importance;
+  /** 顯示數字分數（詳情頁、焦點卡用）。 */
+  showScore?: boolean;
+}
+const { imp, showScore = false } = Astro.props;
+const filled = 5 - imp.rank;
+---
+<span class={`imp imp-${imp.level}`} title={`重要度 ${imp.score} 分（${imp.level.toUpperCase()} ${imp.label}）`}>
+  <span class="imp-meter" aria-hidden="true">
+    {[1, 2, 3, 4].map((i) => <i class={i <= filled ? 'on' : ''}></i>)}
+  </span>
+  <span class="imp-text"><b>{imp.level.toUpperCase()}</b>{imp.label}{showScore && <span class="imp-score">{imp.score}</span>}</span>
+</span>
