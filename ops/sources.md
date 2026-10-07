@@ -23,6 +23,8 @@ Claude Cloud 巡查時優先讀這裡列出的官方頁面，再看 `inbox/` 使
 | Google DeepMind | 公告 | https://deepmind.google/blog/ | 可存取（2026-10-01，curl 200） |
 | Gemini API | 更新紀錄 | https://ai.google.dev/gemini-api/docs/changelog | 可存取（2026-10-01，curl 200） |
 | AWS／Amazon Bedrock | 公告 | https://aws.amazon.com/about-aws/whats-new/ | 可存取（2026-10-01，curl 200） |
+| Claude API 定價 | 定價頁 | https://platform.claude.com/docs/en/about-claude/pricing | 可存取（2026-10-07，curl 200；`content/pricing/` 來源） |
+| OpenAI API 定價 | 定價頁 | https://developers.openai.com/api/docs/pricing | 可存取（2026-10-07，curl 200；表格為前端渲染，改讀 `.md` 版 https://developers.openai.com/api/docs/pricing.md） |
 
 新增來源時：寫清楚類型（公告／文件／定價頁／更新紀錄），並在第一次成功讀取後把狀態改為「可存取（YYYY-MM-DD）」。
 
