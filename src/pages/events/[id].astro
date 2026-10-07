@@ -4,6 +4,7 @@ import Base from '../../layouts/Base.astro';
 import ImportanceBadge from '../../components/ImportanceBadge.astro';
 import { importanceMap } from '../../lib/importance';
 import { getDecisions, relatedOf } from '../../lib/events';
+import { getPricing, usd } from '../../lib/pricing';
 import {
   CATEGORY_LABEL,
   IMPACT_LABEL,
@@ -29,6 +30,7 @@ const allEvents = await getCollection('events');
 const imp = importanceMap(allEvents).get(event.id)!;
 const related = relatedOf(event, allEvents);
 const decisions = (await getDecisions()).filter((x) => x.data.related_events.includes(event.id));
+const prices = (await getPricing()).filter((x) => x.data.related_events.includes(event.id));
 const DECISION_STATUS: Record<string, string> = { approved: '已核准', candidate: '候選（待核准）', retired: '已退役' };
 const p = imp.parts;
 const signed = (n: number) => (n < 0 ? `−${-n}` : `+${n}`);
@@ -99,6 +101,21 @@ const signed = (n: number) => (n < 0 ? `−${-n}` : `+${n}`);
     <section class="card prose" aria-label="事件內文">
       <Content />
     </section>
+
+    {prices.length > 0 && (
+      <section aria-labelledby="h-price">
+        <h2 id="h-price">目前官方定價</h2>
+        <div class="card price-box">
+          {prices.map((x) => (
+            <p>
+              <a href={`${import.meta.env.BASE_URL}pricing/#${x.id}`}><b>{x.data.name}</b></a>：
+              輸入 {usd(x.data.input)}・快取命中 {usd(x.data.cached_input)}・輸出 {usd(x.data.output)}（USD／每百萬 token）
+            </p>
+          ))}
+          <p class="side-meta">取自官方定價頁，查核於 {formatDate(prices[0].data.verified_at)}；可能與事件發生當時的價格不同。</p>
+        </div>
+      </section>
+    )}
 
     {related.length > 0 && (
       <section aria-labelledby="h-related">

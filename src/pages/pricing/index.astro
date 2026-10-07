@@ -1,0 +1,173 @@
+---
+/**
+ * 價格對照表：只收官方定價頁（content/pricing/，schema 以網域清單強制）。
+ * 「3:1 混合單價」是計算值，頁面明確標示；跨廠商的 token 計數方式不同，單價不能直接等同於任務成本。
+ */
+import Base from '../../layouts/Base.astro';
+import { BLEND_RATIO, LOG_DOMAIN, blended, getPricing, logPos, usd } from '../../lib/pricing';
+import { getEvents } from '../../lib/events';
+import { VENDOR_LABEL, formatDate, formatDateTime } from '../../lib/format';
+
+const rows = await getPricing();
+const eventTitles = new Map((await getEvents()).map((e) => [e.id, e.data.title]));
+const base = import.meta.env.BASE_URL;
+const vendors = [...new Set(rows.map((r) => r.data.vendor))];
+const oldest = rows.length ? new Date(Math.min(...rows.map((r) => r.data.verified_at.getTime()))) : null;
+const sourcesByVendor = vendors.map((v) => ({
+  v,
+  sources: [...new Map(rows.filter((r) => r.data.vendor === v).flatMap((r) => r.data.sources).map((s) => [s.url, s])).values()],
+}));
+const ticks = [0.1, 1, 10, 100];
+---
+<Base title="價格對照" wide>
+  <nav class="crumb" aria-label="頁面導覽"><a href={base}>← 回首頁</a></nav>
+  <h1 class="page-h">API 價格對照</h1>
+  <p class="page-sub">
+    {vendors.map((v) => VENDOR_LABEL[v]).join('、')}・標準層級（同步、全球路由）・USD／每百萬 token
+    {oldest && `・最早一筆查核於台北時間 ${formatDateTime(oldest)}`}
+  </p>
+
+  <section class="panel" aria-labelledby="h-chart">
+    <div class="panel-head">
+      <h2 id="h-chart">輸入與輸出單價</h2>
+      <span class="panel-note">對數座標・每格 ×10</span>
+    </div>
+    <p class="pc-legend">
+      <span><i class="pc-dot pc-in" aria-hidden="true"></i>輸入</span>
+      <span><i class="pc-dot pc-out" aria-hidden="true"></i>輸出</span>
+    </p>
+    <ol class="pc-plot" aria-label="各模型輸入與輸出單價（對數座標）">
+      {rows.map((r) => {
+        const d = r.data;
+        const a = logPos(d.input);
+        const b = logPos(d.output);
+        return (
+          <li>
+            <span class="pc-name"><small>{VENDOR_LABEL[d.vendor]}</small>{d.name}</span>
+            <span class="pc-track" aria-label={`${d.name}：輸入 ${usd(d.input)}、輸出 ${usd(d.output)}`}>
+              {ticks.map((t) => <i class="pc-grid" style={`left:${logPos(t)}%`} aria-hidden="true"></i>)}
+              <i class="pc-span" style={`left:${a}%;width:${b - a}%`} aria-hidden="true"></i>
+              <i class="pc-dot pc-in" style={`left:${a}%`} title={`輸入 ${usd(d.input)}`} aria-hidden="true"></i>
+              <i class="pc-dot pc-out" style={`left:${b}%`} title={`輸出 ${usd(d.output)}`} aria-hidden="true"></i>
+            </span>
+            <span class="pc-val">{usd(d.input)}<span aria-hidden="true"> → </span><span class="sr-only">至</span>{usd(d.output)}</span>
+          </li>
+        );
+      })}
+    </ol>
+    <div class="pc-axis" aria-hidden="true">
+      <span></span>
+      <span class="pc-axis-track">{ticks.map((t) => <b style={`left:${logPos(t)}%`}>{usd(t)}</b>)}</span>
+      <span></span>
+    </div>
+    <p class="side-meta">座標範圍 {usd(LOG_DOMAIN.min)}–{usd(LOG_DOMAIN.max)}。滑過圓點看數值；完整數字見下表。</p>
+  </section>
+
+  <section class="panel" aria-labelledby="h-table">
+    <div class="panel-head">
+      <h2 id="h-table">對照表</h2>
+      <label class="pc-sort">排序
+        <select id="pc-sort">
+          <option value="vendor">依廠商</option>
+          <option value="blend">3:1 混合單價</option>
+          <option value="input">輸入</option>
+          <option value="output">輸出</option>
+        </select>
+      </label>
+    </div>
+    <div class="pc-scroll">
+      <table class="pc-table" id="pc-table">
+        <thead>
+          <tr>
+            <th scope="col">模型</th>
+            <th scope="col" class="num">輸入</th>
+            <th scope="col" class="num">快取命中</th>
+            <th scope="col" class="num">快取寫入</th>
+            <th scope="col" class="num">輸出</th>
+            <th scope="col" class="num">3:1 混合<sup>計算</sup></th>
+            <th scope="col" class="num">Batch 入／出</th>
+            <th scope="col">長上下文</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => {
+            const d = r.data;
+            return (
+              <tr id={r.id} data-order={i} data-blend={blended(d)} data-input={d.input} data-output={d.output}>
+                <th scope="row">
+                  <span class="pc-vendor">{VENDOR_LABEL[d.vendor]}</span>
+                  <span class="pc-model">{d.name}</span>
+                  <code>{d.model_id}</code>
+                </th>
+                <td class="num">{usd(d.input)}</td>
+                <td class="num">{usd(d.cached_input)}</td>
+                <td class="num">{usd(d.cache_write)}</td>
+                <td class="num">{usd(d.output)}</td>
+                <td class="num pc-blend">{usd(Math.round(blended(d) * 1000) / 1000)}</td>
+                <td class="num">{usd(d.batch_input)}／{usd(d.batch_output)}</td>
+                <td>
+                  {d.long_context
+                    ? <>&gt;{Math.round(d.long_context.threshold_tokens / 1000)}K 輸入：{usd(d.long_context.input)}／{usd(d.long_context.output)}</>
+                    : <span class="muted">未另列</span>}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+    <p class="side-meta">
+      3:1 混合單價＝（輸入 × {BLEND_RATIO.input} ＋ 輸出 × {BLEND_RATIO.output}）÷ {BLEND_RATIO.input + BLEND_RATIO.output}，
+      是假設輸入輸出比例的<strong>計算值</strong>，不是官方價格。「—」表示官方未列此項。
+    </p>
+  </section>
+
+  <section class="panel" aria-labelledby="h-caveats">
+    <div class="panel-head"><h2 id="h-caveats">比較前要知道</h2></div>
+    <ul class="howto pc-caveats">
+      <li>各家分詞器不同，同一段文字在不同模型產生的 token 數不同；每百萬 token 單價相同不代表同一任務成本相同（未驗證實際差距）。</li>
+      <li>Anthropic 官方說明：Claude 4.7 以後的模型使用新分詞器，同樣文字約多產生 30% token（相對於自家舊分詞器）。</li>
+      <li>OpenAI 長上下文（&gt;272K 輸入 token）另價；Anthropic 官方說明 Claude 4.6 以後的模型 1M 上下文全程同價。</li>
+      <li>未列入：區域處理／資料駐留加價（兩家皆為 +10%）、Fast／Ultrafast 等加價層級、訂閱方案（ChatGPT 方案頁目前無法自動讀取）。各模型的細節見下方附註。</li>
+    </ul>
+  </section>
+
+  <section class="panel" aria-labelledby="h-notes">
+    <div class="panel-head"><h2 id="h-notes">各模型附註與相關事件</h2></div>
+    {rows.map((r) => (
+      <details class="pc-note" id={`note-${r.id}`}>
+        <summary>{VENDOR_LABEL[r.data.vendor]} {r.data.name}<small>查核於 {formatDate(r.data.verified_at)}</small></summary>
+        {r.data.notes.length > 0 && <ul>{r.data.notes.map((n) => <li>{n}</li>)}</ul>}
+        {r.data.related_events.length > 0 && (
+          <p><span class="label">相關事件</span>
+            {r.data.related_events.map((id, i) => <>{i > 0 && '、'}<a href={`${base}events/${id}/`}>{eventTitles.get(id) ?? id}</a></>)}
+          </p>
+        )}
+        <p class="side-meta">來源：{r.data.sources.map((s, i) => <>{i > 0 && '、'}<a href={s.url} rel="noopener noreferrer">{s.title}</a></>)}</p>
+      </details>
+    ))}
+  </section>
+
+  <section class="panel" aria-labelledby="h-src">
+    <div class="panel-head"><h2 id="h-src">官方來源</h2><span class="panel-note">只收官方定價頁，build 時檢查網域</span></div>
+    <ul class="sources pc-sources">
+      {sourcesByVendor.map(({ v, sources }) => sources.map((s) => (
+        <li><span class="pc-vendor">{VENDOR_LABEL[v]}</span><a href={s.url} rel="noopener noreferrer">{s.title}</a></li>
+      )))}
+    </ul>
+  </section>
+</Base>
+
+<script>
+  const table = document.getElementById('pc-table');
+  const sort = document.getElementById('pc-sort') as HTMLSelectElement | null;
+  if (table && sort) {
+    const body = table.querySelector('tbody')!;
+    const rows = Array.from(body.querySelectorAll<HTMLTableRowElement>('tr'));
+    sort.addEventListener('change', () => {
+      const key = sort.value;
+      const val = (r: HTMLTableRowElement) => Number(r.dataset[key === 'vendor' ? 'order' : key]);
+      [...rows].sort((a, b) => val(a) - val(b)).forEach((r) => body.appendChild(r));
+    });
+  }
+</script>

@@ -633,3 +633,62 @@ a.badge.vendor:hover { color: var(--accent); border-color: var(--accent); }
 .badge.decision-approved { background: var(--ok-bg); color: var(--ok); }
 .badge.decision-candidate { background: var(--warn-bg); color: var(--warn); }
 .badge.decision-retired { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+
+/* ---------- 價格對照 ---------- */
+.pc-legend { display: flex; gap: 16px; margin: 0 0 8px; font-size: var(--fs-sm); color: var(--muted); }
+.pc-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.pc-legend .pc-dot { position: static; transform: none; }
+.pc-plot { list-style: none; margin: 0; padding: 0; }
+.pc-plot li, .pc-axis {
+  display: grid; grid-template-columns: 8.5rem minmax(0, 1fr) 6.5rem; gap: 12px; align-items: center;
+}
+.pc-plot li { min-height: 40px; }
+.pc-plot li + li { border-top: 1px solid var(--border); }
+.pc-name { display: flex; flex-direction: column; font-size: var(--fs-sm); font-weight: 600; line-height: 1.3; }
+.pc-name small { color: var(--muted); font-weight: 500; font-size: var(--fs-xs); }
+.pc-track, .pc-axis-track { position: relative; height: 24px; }
+.pc-grid { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--border); }
+.pc-span { position: absolute; top: 50%; height: 2px; margin-top: -1px; background: var(--muted); opacity: .5; }
+.pc-dot {
+  position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%;
+  transform: translate(-50%, -50%); box-shadow: 0 0 0 2px var(--surface); display: inline-block;
+}
+.pc-in { background: var(--surface); border: 2px solid var(--accent); }
+.pc-out { background: var(--accent); border: 2px solid var(--accent); }
+.pc-val { font-size: var(--fs-sm); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pc-axis { margin-top: 2px; }
+.pc-axis-track { height: 18px; }
+.pc-axis-track b { position: absolute; transform: translateX(-50%); font-size: var(--fs-xs); font-weight: 500; color: var(--muted); white-space: nowrap; }
+@media (max-width: 560px) {
+  .pc-plot li, .pc-axis { grid-template-columns: 6.2rem minmax(0, 1fr); }
+  .pc-val { grid-column: 2; text-align: left; margin-top: -6px; padding-bottom: 6px; }
+  .pc-axis > span:last-child { display: none; }
+}
+
+.pc-sort { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-sm); color: var(--muted); }
+.pc-sort select { font: inherit; min-height: 36px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); padding: 0 8px; }
+.pc-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -4px; }
+.pc-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); min-width: 46rem; }
+.pc-table th, .pc-table td { padding: 8px 6px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+.pc-table thead th { color: var(--muted); font-weight: 600; font-size: var(--fs-xs); white-space: nowrap; }
+.pc-table sup { font-size: .65rem; color: var(--warn); margin-left: 2px; }
+.pc-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pc-table tbody th { font-weight: 500; }
+.pc-table tbody th code { display: block; font-size: var(--fs-xs); color: var(--muted); }
+.pc-model { font-weight: 650; display: block; }
+.pc-vendor { font-size: var(--fs-xs); color: var(--muted); margin-right: 6px; }
+.pc-blend { font-weight: 650; }
+.pc-table tr:target { background: var(--accent-tint); }
+.pc-caveats { color: var(--text); }
+.pc-caveats li { display: list-item; margin-left: 1.1rem; }
+.pc-note { border-top: 1px solid var(--border); padding: 4px 0; font-size: var(--fs-sm); }
+.pc-note:first-of-type { border-top: 0; }
+.pc-note summary { cursor: pointer; min-height: 36px; display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.pc-note summary small { color: var(--muted); font-weight: 500; }
+.pc-note ul { margin: 4px 0 8px; padding-left: 1.2rem; }
+.pc-sources li { display: flex; gap: 8px; align-items: baseline; padding: 6px 0; font-size: var(--fs-sm); }
+
+/* 事件頁的官方定價摘要 */
+.price-box { display: grid; gap: 6px; }
+.price-box p { margin: 0; font-size: var(--fs-sm); }
+main > .panel + .panel { margin-top: var(--sp-3); }

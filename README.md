@@ -24,6 +24,7 @@
 | `content/events/` | 一事一檔（`YYYY-MM-DD-slug.md`），Dashboard 主體；「本週重點」＝ `weekly_rank` 不為 null 的事件 |
 | `content/decisions/` | 使用者核准的個人決策（CODEOWNERS＋label gate 保護）；`/decisions/` 頁顯示決策與「待決策事件」 |
 | `content/corrections/` | 已發布資訊的修正紀錄（CODEOWNERS＋label gate 保護） |
+| `content/pricing/` | API 價格對照表資料（只收官方定價頁，schema 檢查網域） |
 | `content/runs/` | 每次 routine 巡查的紀錄（檢查了哪些來源、結果），沒有新事件也寫；首頁「最後巡查」與新鮮度依此判斷 |
 | `ops/sources.md` | 官方查核來源清單 |
 | `ops/prompts/` | Claude Cloud 更新／稽核提示 |
@@ -42,6 +43,7 @@
 | `/` | 總覽儀表板 |
 | `/events/<id>/` | 事件詳情（含相關事件、相關決策、下次核對） |
 | `/vendors/<vendor>/` | 單一廠商的全部事件 |
+| `/pricing/` | OpenAI／Anthropic API 價格對照（官方定價頁；3:1 混合單價為計算值） |
 | `/decisions/` | 已核准／候選決策，以及尚無決策的「需要行動／值得評估」事件 |
 | `/feed.xml` | Atom feed（最新 50 則；`updated` 為查核時間，重新查核或更正時閱讀器會再次標為更新） |
 | `/events.json` | 全部事件的結構化匯出（含推導重要度） |
@@ -68,7 +70,8 @@ npm run build        # 輸出 dist/
 | `astro check`（zod schema：欄位、型別、列舉、URL 格式、至少一個來源） | ❌ 擋合併 |
 | 重複 `id`、`id` 與檔名不符、內部連結／`event_id`／`related_events` 指向不存在事件 | ❌ 擋合併 |
 | `verified_at` 超過 48 小時且無 correction | ⚠️ 只提醒（job summary） |
-| `next_check_at` 已到期、最新巡查紀錄超過 48 小時 | ⚠️ 只提醒（job summary） |
+| `next_check_at` 已到期、最新巡查紀錄超過 48 小時、價格 `verified_at` 超過 7 天 | ⚠️ 只提醒（job summary） |
+| 價格來源不在該廠商官方網域清單 | ❌ 擋合併 |
 | 巡查紀錄的 `events_added`／`events_updated` 指向不存在事件 | ❌ 擋合併 |
 | 來源 URL 存活 | ⚠️ 只提醒 |
 | `astro build` | ❌ 擋合併 |

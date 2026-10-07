@@ -172,4 +172,74 @@ const runs = defineCollection({
     }),
 });
 
-export const collections = { events, corrections, decisions, runs };
+/**
+ * 價格表只收官方來源（CLAUDE.md 內容規則第 5 點）：來源網址的主機必須在該廠商的官方網域清單內，否則 build 失敗。
+ * 要追蹤新廠商時，先在這裡加官方網域，再新增價格檔。
+ */
+export const OFFICIAL_PRICING_HOSTS: Partial<Record<(typeof VENDORS)[number], string[]>> = {
+  openai: ['openai.com', 'developers.openai.com', 'platform.openai.com', 'help.openai.com'],
+  anthropic: ['anthropic.com', 'www.anthropic.com', 'claude.com', 'docs.claude.com', 'platform.claude.com', 'docs.anthropic.com', 'support.claude.com'],
+};
+
+/** USD／每百萬 token；官方標「-」或不提供的項目用 null，不要填 0。 */
+const price = z.number().nonnegative().nullable();
+
+const pricing = defineCollection({
+  loader: glob({ pattern: ['*.md', '!README.md'], base: './content/pricing' }),
+  schema: z
+    .object({
+      /** `<vendor>-<model-slug>`，與檔名相同。 */
+      id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+      vendor: z.enum(VENDORS),
+      /** 顯示名稱，例如「Claude Opus 5.5」。 */
+      name: z.string().min(1),
+      /** API 模型 id，例如 gpt-6.1-sol。 */
+      model_id: z.string().min(1),
+      /** 官方頁面是否把它列為目前主力（latest／flagship）；false 代表舊版或特殊用途，比較表預設收合。 */
+      current: z.boolean().default(true),
+      /** 標準（同步、全球路由）價格，USD／每百萬 token。 */
+      input: z.number().nonnegative(),
+      output: z.number().nonnegative(),
+      /** 快取命中（OpenAI「cached input」、Anthropic「cache hits and refreshes」）。 */
+      cached_input: price,
+      /** 快取寫入（OpenAI「cache writes」、Anthropic「5m cache writes」）。 */
+      cache_write: price,
+      /** 長上下文另價：超過 `threshold_tokens` 個輸入 token 時整個請求適用。官方說明全上下文同價時設 null。 */
+      long_context: z
+        .object({
+          threshold_tokens: z.number().int().positive(),
+          input: z.number().nonnegative(),
+          output: z.number().nonnegative(),
+          cached_input: price,
+        })
+        .strict()
+        .nullable(),
+      batch_input: price,
+      batch_output: price,
+      /** 官方定價頁上與此模型直接相關的說明（例如促銷期限、分詞器差異），一行一則，照原意轉述。 */
+      notes: z.array(z.string().min(1)).default([]),
+      verified_at: isoDateTime,
+      sources: z.array(source).min(1),
+      related_events: z.array(z.string().regex(ID)).default([]),
+    })
+    .strict()
+    .superRefine((d, ctx) => {
+      const hosts = OFFICIAL_PRICING_HOSTS[d.vendor];
+      if (!hosts) {
+        ctx.addIssue({ code: 'custom', path: ['vendor'], message: `尚未設定 ${d.vendor} 的官方網域（OFFICIAL_PRICING_HOSTS）` });
+        return;
+      }
+      d.sources.forEach((s, i) => {
+        const host = new URL(s.url).hostname;
+        if (!hosts.includes(host)) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['sources', i, 'url'],
+            message: `價格只能引用官方來源：${host} 不在 ${d.vendor} 的官方網域清單內`,
+          });
+        }
+      });
+    }),
+});
+
+export const collections = { events, corrections, decisions, runs, pricing };

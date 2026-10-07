@@ -48,7 +48,7 @@ async function probe(url) {
 }
 
 const targets = [];
-for (const dir of ['events', 'corrections']) {
+for (const dir of ['events', 'corrections', 'pricing']) {
   for (const e of readCollection(dir)) {
     for (const s of e.data.sources ?? []) if (s?.url) targets.push({ file: e.file, url: s.url });
   }

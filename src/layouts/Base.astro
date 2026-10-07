@@ -16,6 +16,7 @@ const pageTitle = title ? `${title}｜AI Trend Radar` : 'AI Trend Radar';
 const path = Astro.url.pathname;
 const nav = [
   { href: base, label: '總覽', current: path === base },
+  { href: `${base}pricing/`, label: '價格', current: path.startsWith(`${base}pricing/`) },
   { href: `${base}decisions/`, label: '決策', current: path.startsWith(`${base}decisions/`) },
 ];
 ---

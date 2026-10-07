@@ -2,7 +2,7 @@
 // 跨檔案內容檢查（PRD v0.2 §6.1：zod schema 管不到的部分）。
 //
 //   ERROR（exit 1，擋 CI）：重複 id、id 與檔名不符、內部連結／event_id／related_events／巡查紀錄的事件 id 指向不存在的事件
-//   WARN （exit 0，只提醒）：verified_at 超過 48 小時且沒有對應 correction；next_check_at 已到期；最新巡查紀錄超過 48 小時
+//   WARN （exit 0，只提醒）：verified_at 超過 48 小時且沒有對應 correction；價格 verified_at 超過 7 天；next_check_at 已到期；最新巡查紀錄超過 48 小時
 //
 // 外部來源 URL 存活檢查另見 scripts/check-urls.mjs（warn-only）。
 // 測試用：RADAR_NOW=2026-09-26T12:00:00+08:00 可固定「現在時間」。
@@ -20,6 +20,7 @@ const events = readCollection('events');
 const corrections = readCollection('corrections');
 const decisions = readCollection('decisions');
 const runs = readCollection('runs');
+const pricing = readCollection('pricing');
 const errors = [];
 const warnings = [];
 const err = (msg, file) => { errors.push({ msg, file }); report('error', msg, file); };
@@ -41,6 +42,7 @@ const eventIds = checkIds(events, '事件');
 checkIds(corrections, 'correction');
 checkIds(decisions, 'decision');
 checkIds(runs, '巡查紀錄');
+checkIds(pricing, '價格');
 
 // 2. 內部連結：Markdown 內文的 `/events/<id>/` 連結，以及 correction.event_id、decision.related_events
 const LINK = /\]\(\s*<?\/events\/([^/)\s>#?]*)\/?[^)]*\)/g;
@@ -68,6 +70,11 @@ for (const d of decisions) {
   }
 }
 
+for (const p of pricing) {
+  for (const id of p.data.related_events ?? []) {
+    if (!eventIds.has(id)) err(`related_events 的「${id}」指向不存在的事件`, p.file);
+  }
+}
 for (const r of runs) {
   for (const key of ['events_added', 'events_updated']) {
     for (const id of r.data[key] ?? []) {
@@ -100,6 +107,17 @@ for (const e of events) {
   }
 }
 
+// 4b. 價格查核過期提醒：價格會變動，verified_at 超過 7 天就該回官方定價頁重新核對（只提醒）
+const PRICE_STALE_DAYS = 7;
+for (const p of pricing) {
+  const v = p.data.verified_at ? new Date(p.data.verified_at) : null;
+  if (!v || Number.isNaN(v.getTime())) continue;
+  const days = (now.getTime() - v.getTime()) / 86_400_000;
+  if (days > PRICE_STALE_DAYS) {
+    warn(`價格 verified_at 已超過 ${PRICE_STALE_DAYS} 天（${Math.floor(days)} 天前），請回官方定價頁重新核對`, p.file);
+  }
+}
+
 // 5. 巡查紀錄新鮮度：最新一筆超過 48 小時代表 routine 漏跑或 PR 未合併（只提醒）
 const lastRun = runs
   .map((r) => ({ r, t: r.data.ran_at ? new Date(r.data.ran_at).getTime() : NaN }))
@@ -115,7 +133,7 @@ if (!lastRun) {
 const summary = [
   '## 內容跨檔案檢查',
   '',
-  `- 事件 ${events.length} 則、correction ${corrections.length} 則、decision ${decisions.length} 則、巡查紀錄 ${runs.length} 筆`,
+  `- 事件 ${events.length} 則、correction ${corrections.length} 則、decision ${decisions.length} 則、巡查紀錄 ${runs.length} 筆、價格 ${pricing.length} 筆`,
   `- ❌ 錯誤 ${errors.length} 項（擋合併）`,
   `- ⚠️ 提醒 ${warnings.length} 項（不擋合併，請審核者留意）`,
   '',

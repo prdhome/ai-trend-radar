@@ -10,6 +10,7 @@
 4. **事實與推論分開**：`status` 用 confirmed／reported／unverified／corrected，`source_type` 用 official／third_party／personal_test；
    內文固定「已確認事實／對我的影響（推論）／仍待確認」三段。不明處標「未驗證」。
 5. **價格、額度、資格**優先引用官方定價頁、說明文件或公告；第三方報導只作補充。說法衝突時並列，不強制選勝者。
+   `content/pricing/` 價格表**只收官方定價頁**（schema 以網域清單強制），格式見該目錄 README。
 6. **修正要留紀錄**：推翻舊結論時，把事件 `status` 改為 `corrected`，並提出 `content/corrections/` 紀錄保留舊說法；不靜默刪除。
 7. **時間**：ISO 8601 且帶時區，介面顯示 Asia/Taipei。
 8. **本週重點**用事件的 `weekly_rank`（1–5）／`featured` 欄位，不建立 `content/weekly/`。
