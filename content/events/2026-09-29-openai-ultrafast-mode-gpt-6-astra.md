@@ -20,6 +20,8 @@ summary: "OpenAI 更新紀錄於 2026-09-29 列出 GPT-6 Astra 的 Ultrafast 模
 impact_summary: "推論：對延遲敏感、需要大量工具呼叫的代理程式可能值得評估，但價格倍率在文件中未見，需先查定價表再決定。"
 next_check: "查 OpenAI 定價頁確認 Ultrafast 的實際價格，並留意是否擴大到 EU／其他區域處理。"
 next_check_at: "2026-10-16T10:00:00+08:00"
+related_events:
+  - 2026-09-22-gpt-6-sol-luna-release
 ---
 
 ## 已確認事實

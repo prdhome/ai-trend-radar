@@ -17,6 +17,8 @@ summary: "GitHub 於 2026-10-01 公布 Copilot CLI 與 Copilot app（macOS、Win
 impact_summary: "推論：若有沒有 API／CLI 的 GUI 工具要自動化，可評估試用，但預覽階段需留意權限與組織政策。"
 next_check: "每週查 GitHub Changelog，確認何時轉為正式版，以及方案與用量限制是否公布。"
 next_check_at: "2026-10-10T10:00:00+08:00"
+related_events:
+  - 2026-09-29-openai-agents-api-computer-use
 ---
 
 ## 已確認事實

@@ -3,6 +3,7 @@ import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import ImportanceBadge from '../../components/ImportanceBadge.astro';
 import { importanceMap } from '../../lib/importance';
+import { getDecisions, relatedOf } from '../../lib/events';
 import {
   CATEGORY_LABEL,
   IMPACT_LABEL,
@@ -11,6 +12,7 @@ import {
   VENDOR_LABEL,
   formatDate,
   formatDateTime,
+  formatMonthDay,
 } from '../../lib/format';
 
 export async function getStaticPaths() {
@@ -23,7 +25,11 @@ const d = event.data;
 const { Content } = await render(event);
 const corrections = (await getCollection('corrections')).filter((c) => c.data.event_id === event.id);
 // 重要度的新近度以「全部事件中最新的事件日」為基準，所以要拿整個 collection 算。
-const imp = importanceMap(await getCollection('events')).get(event.id)!;
+const allEvents = await getCollection('events');
+const imp = importanceMap(allEvents).get(event.id)!;
+const related = relatedOf(event, allEvents);
+const decisions = (await getDecisions()).filter((x) => x.data.related_events.includes(event.id));
+const DECISION_STATUS: Record<string, string> = { approved: '已核准', candidate: '候選（待核准）', retired: '已退役' };
 const p = imp.parts;
 const signed = (n: number) => (n < 0 ? `−${-n}` : `+${n}`);
 ---
@@ -93,6 +99,34 @@ const signed = (n: number) => (n < 0 ? `−${-n}` : `+${n}`);
     <section class="card prose" aria-label="事件內文">
       <Content />
     </section>
+
+    {related.length > 0 && (
+      <section aria-labelledby="h-related">
+        <h2 id="h-related">相關事件</h2>
+        <ol class="card related">
+          {related.map(({ event: r, direction }) => (
+            <li class={`cat-${r.data.category}`}>
+              <time datetime={r.data.event_at.toISOString()}>{r.data.date_unknown ? '日期未知' : formatMonthDay(r.data.event_at)}</time>
+              <span class="rel-dir">{{ later: '後續', same: '同日', earlier: '先前' }[direction]}</span>
+              <a href={`${import.meta.env.BASE_URL}events/${r.id}/`}>{r.data.title}</a>
+            </li>
+          ))}
+        </ol>
+        <p class="side-meta">關聯為編輯判斷（同系列、同類功能或被引用），不代表因果關係。</p>
+      </section>
+    )}
+
+    {decisions.length > 0 && (
+      <section aria-labelledby="h-decisions">
+        <h2 id="h-decisions">相關決策</h2>
+        {decisions.map((x) => (
+          <div class="card">
+            <div class="ev-tags"><span class={`badge decision-${x.data.status}`}>{DECISION_STATUS[x.data.status]}</span></div>
+            <p><a href={`${import.meta.env.BASE_URL}decisions/#${x.id}`}>{x.data.title}</a></p>
+          </div>
+        ))}
+      </section>
+    )}
 
     {d.next_check && (
       <section aria-labelledby="h-next">

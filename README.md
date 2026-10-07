@@ -22,7 +22,7 @@
 | --- | --- |
 | `inbox/` | 使用者放入的 URL／研究筆記，原文保留，不上站 |
 | `content/events/` | 一事一檔（`YYYY-MM-DD-slug.md`），Dashboard 主體；「本週重點」＝ `weekly_rank` 不為 null 的事件 |
-| `content/decisions/` | 使用者核准的個人決策（CODEOWNERS＋label gate 保護） |
+| `content/decisions/` | 使用者核准的個人決策（CODEOWNERS＋label gate 保護）；`/decisions/` 頁顯示決策與「待決策事件」 |
 | `content/corrections/` | 已發布資訊的修正紀錄（CODEOWNERS＋label gate 保護） |
 | `content/runs/` | 每次 routine 巡查的紀錄（檢查了哪些來源、結果），沒有新事件也寫；首頁「最後巡查」與新鮮度依此判斷 |
 | `ops/sources.md` | 官方查核來源清單 |
@@ -34,6 +34,17 @@
 | `.github/workflows/deploy.yml` | main：build＋部署 Pages，寫入 build metadata |
 
 沒有 `content/weekly/`（v0.2 §6.2：避免與 events 雙份資料漂移）。
+
+## 網站頁面與訂閱出口
+
+| 路徑 | 內容 |
+| --- | --- |
+| `/` | 總覽儀表板 |
+| `/events/<id>/` | 事件詳情（含相關事件、相關決策、下次核對） |
+| `/vendors/<vendor>/` | 單一廠商的全部事件 |
+| `/decisions/` | 已核准／候選決策，以及尚無決策的「需要行動／值得評估」事件 |
+| `/feed.xml` | Atom feed（最新 50 則；`updated` 為查核時間，重新查核或更正時閱讀器會再次標為更新） |
+| `/events.json` | 全部事件的結構化匯出（含推導重要度） |
 
 ## 本機開發
 

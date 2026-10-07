@@ -20,6 +20,8 @@ summary: "GitHub 於 2026-09-29 宣布 OpenAI 的 GPT-6.1 Sol 已在 Copilot 正
 impact_summary: "推論：若報導的價格屬實，GPT-6.1 Sol 可能是 agent 編程工作流中成本較低的選項，值得與現用模型比較。"
 next_check: "待 OpenAI 官方公告可讀時，核對 API 定價、ChatGPT／Codex 資格與 Ultrafast 選項。"
 next_check_at: "2026-10-15T10:00:00+08:00"
+related_events:
+  - 2026-09-22-gpt-6-sol-luna-release
 ---
 
 ## 已確認事實

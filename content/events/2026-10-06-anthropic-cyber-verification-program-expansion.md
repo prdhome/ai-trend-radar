@@ -16,6 +16,8 @@ impact: monitor
 summary: "Anthropic 於 2026-10-06 宣布把 Project Glasswing 與原 CVP 整併為 Defense／Red Team／Specialized 三層存取的 Cyber Verification Program。"
 impact_summary: "推論：只影響需要資安專用能力（滲透測試、漏洞分析）的組織；個人訂閱配置無需動作。"
 next_check: "若日後需要資安用途的 Claude 存取，再回頭讀公告確認申請資格與流程。"
+related_events:
+  - 2026-09-30-gemini-4-argon-announcement
 ---
 
 ## 已確認事實

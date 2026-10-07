@@ -1,0 +1,96 @@
+---
+/**
+ * 決策頁（PRD v0.2 §7.1）：把「對我的影響（推論）」接到實際的選擇上。
+ * - 已核准／候選／已退役決策：內容來自 content/decisions/（CODEOWNERS＋decision-approved label 保護）。
+ * - 待決策事件：影響為「需要行動／值得評估」、但還沒有 approved／candidate 決策引用的事件（lib/events.ts 的 undecidedEvents）。
+ * 本頁只呈現，不產生決策；Claude 只能提出 status: candidate 的候選決策，核准由使用者在 PR 上做。
+ */
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { getDecisions, getEvents, undecidedEvents } from '../../lib/events';
+import { importanceMap } from '../../lib/importance';
+import { IMPACT_LABEL, VENDOR_LABEL, formatDate } from '../../lib/format';
+
+const events = await getEvents();
+const imp = importanceMap(events);
+const eventById = new Map(events.map((e) => [e.id, e]));
+const decisions = await Promise.all(
+  (await getDecisions()).map(async (d) => ({ d, Content: (await render(d)).Content })),
+);
+const approved = decisions.filter((x) => x.d.data.status === 'approved');
+const candidates = decisions.filter((x) => x.d.data.status === 'candidate');
+const retired = decisions.filter((x) => x.d.data.status === 'retired');
+const undecided = undecidedEvents(events, decisions.map((x) => x.d)).sort(
+  (a, b) => imp.get(b.id)!.score - imp.get(a.id)!.score,
+);
+const base = import.meta.env.BASE_URL;
+const sections = [
+  { key: 'approved', title: '已核准決策', note: '由使用者核准，目前生效', list: approved, empty: '目前沒有已核准的決策。' },
+  { key: 'candidate', title: '候選決策', note: 'Claude 提出，待你在 PR 上核准', list: candidates, empty: '目前沒有候選決策。' },
+] as const;
+---
+<Base title="決策">
+  <nav class="crumb" aria-label="頁面導覽"><a href={base}>← 回首頁</a></nav>
+  <h1 class="page-h">決策</h1>
+  <p class="page-sub">事件裡的「對我的影響」是推論；要不要因此調整訂閱或工具配置，在這裡收斂成決策。</p>
+
+  {sections.map((s) => (
+    <section class="panel decision-sec" aria-labelledby={`h-${s.key}`}>
+      <div class="panel-head"><h2 id={`h-${s.key}`}>{s.title}</h2><span class="panel-note">{s.note}・{s.list.length} 則</span></div>
+      {s.list.length === 0 ? <p class="empty">{s.empty}</p> : s.list.map(({ d, Content }) => (
+        <article class="decision side-item" id={d.id}>
+          <div class="ev-tags">
+            <span class={`badge decision-${d.data.status}`}>{s.key === 'approved' ? '已核准' : '候選'}</span>
+            {d.data.decided_at && <span class="side-meta">決定於 {formatDate(d.data.decided_at)}</span>}
+          </div>
+          <h3>{d.data.title}</h3>
+          <div class="prose"><Content /></div>
+          {d.data.reevaluate_when && <p><span class="label">重新評估條件</span>{d.data.reevaluate_when}</p>}
+          {d.data.related_events.length > 0 && (
+            <p><span class="label">依據事件</span>
+              {d.data.related_events.map((id, i) => (
+                <>{i > 0 && '、'}<a href={`${base}events/${id}/`}>{eventById.get(id)?.data.title ?? id}</a></>
+              ))}
+            </p>
+          )}
+        </article>
+      ))}
+    </section>
+  ))}
+
+  <section class="panel decision-sec" aria-labelledby="h-undecided">
+    <div class="panel-head">
+      <h2 id="h-undecided">待決策事件</h2>
+      <span class="panel-note">「需要行動／值得評估」且尚無決策・{undecided.length} 則・依重要度</span>
+    </div>
+    {undecided.length === 0 ? <p class="empty">所有需要評估的事件都已有決策。</p> : (
+      <ol class="undecided">
+        {undecided.map((e) => (
+          <li class="side-item">
+            <div class="ev-tags">
+              <span class={`lv lv-${imp.get(e.id)!.level}`}>{imp.get(e.id)!.level.toUpperCase()}</span>
+              <span class={`badge impact-${e.data.impact}`}>{IMPACT_LABEL[e.data.impact]}</span>
+              {e.data.vendors.map((v) => <span class="badge vendor">{VENDOR_LABEL[v]}</span>)}
+            </div>
+            <h3><a href={`${base}events/${e.id}/`}>{e.data.title}</a></h3>
+            <p><span class="tag-infer">推論</span>{e.data.impact_summary.replace(/^推論[:：]\s*/, '')}</p>
+          </li>
+        ))}
+      </ol>
+    )}
+    <p class="side-meta">要針對某則事件做決策：請 Claude 在 <code>content/decisions/</code> 提出 <code>status: candidate</code> 的候選決策並開 PR，由你審核後加上 <code>decision-approved</code> label 合併。</p>
+  </section>
+
+  {retired.length > 0 && (
+    <details class="panel decision-sec">
+      <summary>已退役決策（{retired.length}）</summary>
+      {retired.map(({ d, Content }) => (
+        <article class="decision side-item" id={d.id}>
+          <div class="ev-tags"><span class="badge decision-retired">已退役</span></div>
+          <h3>{d.data.title}</h3>
+          <div class="prose"><Content /></div>
+        </article>
+      ))}
+    </details>
+  )}
+</Base>

@@ -17,6 +17,8 @@ summary: "GitHub 於 2026-10-02 宣布已在所有 Copilot 體驗中棄用四個
 impact_summary: "推論：若工作流程或整合固定指定這些模型，需改用官方建議的替代模型；Enterprise 管理員可能要先開啟模型政策。"
 next_check: "查 GitHub Copilot 支援模型清單，確認替代模型的可用性與計費倍率是否變動。"
 next_check_at: "2026-10-17T10:00:00+08:00"
+related_events:
+  - 2026-09-22-claude-opus-5-5-release
 ---
 
 ## 已確認事實

@@ -52,6 +52,55 @@ export function groupByVendor(events: EventEntry[]): { vendor: string; events: E
     .sort((a, b) => b.events.length - a.events.length || a.vendor.localeCompare(b.vendor));
 }
 
+/**
+ * 某事件的相關事件：自己 `related_events` 指向的＋別的事件指向自己的（雙向），依事件日期新到舊。
+ * `related_events` 只需寫在較新的事件上，舊事件的詳情頁也會出現後續事件。
+ */
+export function relatedOf(
+  event: EventEntry,
+  events: EventEntry[],
+): { event: EventEntry; direction: 'earlier' | 'same' | 'later' }[] {
+  const out = new Set(event.data.related_events);
+  const byId = new Map(events.map((e) => [e.id, e]));
+  const result = new Map<string, EventEntry>();
+  for (const id of out) if (byId.has(id) && id !== event.id) result.set(id, byId.get(id)!);
+  for (const e of events) if (e.id !== event.id && e.data.related_events.includes(event.id)) result.set(e.id, e);
+  return [...result.values()]
+    .sort((a, b) => b.data.event_at.getTime() - a.data.event_at.getTime())
+    .map((e) => {
+      // 依台北日期比較；任一方日期未知時無法判斷先後，視為同期。
+      const diff =
+        e.data.date_unknown || event.data.date_unknown
+          ? 0
+          : taipeiDayIndex(e.data.event_at) - taipeiDayIndex(event.data.event_at);
+      return { event: e, direction: diff > 0 ? 'later' : diff < 0 ? 'earlier' : 'same' } as const;
+    });
+}
+
+export type DecisionEntry = CollectionEntry<'decisions'>;
+
+/** 決策，依狀態（approved → candidate → retired）再依 decided_at 新到舊。 */
+export async function getDecisions(): Promise<DecisionEntry[]> {
+  const order = { approved: 0, candidate: 1, retired: 2 } as const;
+  const all = await getCollection('decisions');
+  return all.sort(
+    (a, b) =>
+      order[a.data.status] - order[b.data.status] ||
+      (b.data.decided_at?.getTime() ?? 0) - (a.data.decided_at?.getTime() ?? 0),
+  );
+}
+
+/**
+ * 待決策事件：影響程度為「需要行動／值得評估」，且還沒有任何 approved／candidate 決策引用。
+ * retired 決策不算：退役代表當初的結論已不適用，事件應回到待決策。
+ */
+export function undecidedEvents(events: EventEntry[], decisions: DecisionEntry[]): EventEntry[] {
+  const covered = new Set(
+    decisions.filter((d) => d.data.status !== 'retired').flatMap((d) => d.data.related_events),
+  );
+  return events.filter((e) => ['action', 'evaluate'].includes(e.data.impact) && !covered.has(e.id));
+}
+
 export function latestVerifiedAt(events: EventEntry[]): Date | null {
   if (events.length === 0) return null;
   return new Date(Math.max(...events.map((e) => e.data.verified_at.getTime())));
