@@ -17,6 +17,8 @@ summary: "GitHub 於 2026-10-01 公布 Copilot CLI、Copilot app 與 Copilot SDK
 impact_summary: "推論：需要可重複、可暫停審核的多步驟代理流程時值得試用，但預覽階段內容可能變動，不宜直接用於正式流程。"
 next_check: "每週查 GitHub Changelog，確認何時轉為正式版，以及 CLI 是否不再需要 experimental 旗標。"
 next_check_at: "2026-10-12T10:00:00+08:00"
+related_events:
+  - 2026-09-30-github-copilot-hydrafusion-preview
 ---
 
 ## 已確認事實

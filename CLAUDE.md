@@ -14,6 +14,7 @@
 7. **時間**：ISO 8601 且帶時區，介面顯示 Asia/Taipei。
 8. **本週重點**用事件的 `weekly_rank`（1–5）／`featured` 欄位，不建立 `content/weekly/`。
    每個事件標 `vendors`（列舉值見 schema；不確定用 `other`），有後續要查的事件同時寫 `next_check` 與 `next_check_at`。
+   同系列後續、同類功能或被引用的事件，在**較新**的事件寫 `related_events`（編輯判斷，不代表因果）。
 9. **不要加 `reviewed_by`**：你不是審核者，也不能替使用者簽核。審核證據是 PR 紀錄與部署時的 build metadata。
 
 ## 決策與修正（PRD v0.2 §7.1）

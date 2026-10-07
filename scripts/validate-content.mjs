@@ -54,6 +54,14 @@ for (const c of corrections) {
     err(`event_id「${c.data.event_id}」指向不存在的事件`, c.file);
   }
 }
+for (const e of events) {
+  const rel = e.data.related_events ?? [];
+  if (new Set(rel).size !== rel.length) err('related_events 有重複的事件 id', e.file);
+  for (const id of rel) {
+    if (id === e.data.id) err('related_events 不可指向自己', e.file);
+    else if (!eventIds.has(id)) err(`related_events 的「${id}」指向不存在的事件`, e.file);
+  }
+}
 for (const d of decisions) {
   for (const id of d.data.related_events ?? []) {
     if (!eventIds.has(id)) err(`related_events 的「${id}」指向不存在的事件`, d.file);

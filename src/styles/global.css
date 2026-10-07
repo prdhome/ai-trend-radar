@@ -605,3 +605,31 @@ a.badge.vendor:hover { color: var(--accent); border-color: var(--accent); }
 .vendor-nav a small { color: var(--muted); }
 .vendor-nav a[aria-current="page"] { background: var(--text); border-color: var(--text); color: var(--bg); font-weight: 650; }
 .vendor-nav a[aria-current="page"] small { color: inherit; }
+
+/* ---------- 站內導覽 ---------- */
+.site-nav {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 4px;
+  margin: calc(-1 * var(--sp-2)) 0 var(--sp-3); font-size: var(--fs-sm);
+}
+.site-nav a {
+  display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border-radius: 999px;
+  color: var(--text); text-decoration: none;
+}
+.site-nav a:hover { background: var(--surface-2); }
+.site-nav a[aria-current="page"] { background: var(--text); color: var(--bg); font-weight: 650; }
+.site-nav-sub { margin-left: auto; display: inline-flex; gap: 4px; }
+.site-nav-sub a { color: var(--muted); }
+
+/* ---------- 相關事件／決策 ---------- */
+.related { list-style: none; margin: 0; padding: 6px 18px; }
+.related li { display: grid; grid-template-columns: 3.2rem auto minmax(0, 1fr); gap: 8px; align-items: baseline; padding: 8px 0; font-size: var(--fs-sm); }
+.related li + li { border-top: 1px solid var(--border); }
+.related time { color: var(--muted); font-variant-numeric: tabular-nums; }
+.rel-dir { font-size: var(--fs-xs); color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 0 7px; }
+.decision-sec { margin-bottom: var(--sp-3); }
+.decision-sec > summary { cursor: pointer; min-height: 36px; display: flex; align-items: center; font-weight: 650; }
+.decision .prose { padding: 0; }
+.undecided { list-style: none; margin: 0 0 8px; padding: 0; }
+.badge.decision-approved { background: var(--ok-bg); color: var(--ok); }
+.badge.decision-candidate { background: var(--warn-bg); color: var(--warn); }
+.badge.decision-retired { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }

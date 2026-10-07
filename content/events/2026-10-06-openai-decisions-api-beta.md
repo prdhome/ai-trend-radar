@@ -20,6 +20,8 @@ summary: "OpenAI 於 2026-10-06 推出 Decisions API（beta，POST /v1/decisions
 impact_summary: "推論：若有分類、路由、排序類的 API 工作，可評估改用；一般聊天訂閱使用者無影響。"
 next_check: "GA 時間與是否支援更多模型。"
 next_check_at: "2026-10-21T10:00:00+08:00"
+related_events:
+  - 2026-09-22-gpt-6-sol-luna-release
 ---
 
 ## 已確認事實

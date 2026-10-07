@@ -78,6 +78,11 @@ const events = defineCollection({
       next_check: z.string().optional(),
       /** 下次核對的到期時間；routine 每次先處理到期事件。必須搭配 `next_check` 說明要核對什麼。 */
       next_check_at: isoDateTime.optional(),
+      /**
+       * 相關事件（同系列後續、同類功能、被引用的替代方案）。只需單向寫在較新的事件上；詳情頁會雙向顯示。
+       * 這是編輯判斷，不代表因果關係。
+       */
+      related_events: z.array(z.string().regex(ID)).default([]),
       /** 格式範例／假資料；頁面會加上「範例」標記。 */
       example: z.boolean().default(false),
     })

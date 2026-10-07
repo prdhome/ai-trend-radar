@@ -5,7 +5,7 @@ import EventCard from '../components/EventCard.astro';
 import DailyChart from '../components/DailyChart.astro';
 import CategoryBars from '../components/CategoryBars.astro';
 import ImportancePanel from '../components/ImportancePanel.astro';
-import { getEvents, getRuns, groupByDay, groupByVendor, groupByWeek, latestVerifiedAt, pendingChecks, recheckQueue, weeklyHighlights } from '../lib/events';
+import { getDecisions, getEvents, getRuns, undecidedEvents, groupByDay, groupByVendor, groupByWeek, latestVerifiedAt, pendingChecks, recheckQueue, weeklyHighlights } from '../lib/events';
 import { IMPORTANCE_LABEL, IMPORTANCE_LEVELS, importanceMap, referenceDay } from '../lib/importance';
 import { getBuildMeta } from '../lib/build-meta';
 import { CATEGORY_LABEL, RUN_RESULT_LABEL, STALE_HOURS, VENDOR_LABEL, dayIndexLabel, formatDate, formatDateTime, formatMonthDay } from '../lib/format';
@@ -29,6 +29,9 @@ const lastChecked =
 const recentRuns = runs.slice(0, 7);
 const unreadable = (r: (typeof runs)[number]) => r.data.sources_checked.filter((s) => !s.ok).length;
 const recheck = recheckQueue(events);
+const decisionList = await getDecisions();
+const candidateCount = decisionList.filter((x) => x.data.status === 'candidate').length;
+const undecided = undecidedEvents(events, decisionList).sort((a, b) => imp.get(b.id)!.score - imp.get(a.id)!.score);
 const vendorGroups = groupByVendor(events);
 const vendorMax = Math.max(1, ...vendorGroups.map((g) => g.events.length));
 const meta = getBuildMeta();
@@ -300,6 +303,26 @@ const base = import.meta.env.BASE_URL;
                 </p>
               </article>
             ))}
+      </section>
+
+      <!-- 待決策：影響為需要行動／值得評估、尚無決策的事件；完整清單與決策在 /decisions/ -->
+      <section class="panel" aria-labelledby="h-undecided" data-section="undecided">
+        <div class="panel-head">
+          <h2 id="h-undecided">待決策</h2>
+          <span class="panel-note">{undecided.length} 則事件{candidateCount > 0 && `・${candidateCount} 則候選待核准`}</span>
+        </div>
+        {undecided.length === 0
+          ? <p class="empty">需要評估的事件都已有決策。</p>
+          : undecided.slice(0, 3).map((e) => (
+              <article class="side-item">
+                <div class="ev-tags">
+                  <span class={`lv lv-${imp.get(e.id)!.level}`}>{imp.get(e.id)!.level.toUpperCase()}</span>
+                  {e.data.vendors.map((v) => <span class="badge vendor">{VENDOR_LABEL[v]}</span>)}
+                </div>
+                <h3><a href={`${base}events/${e.id}/`}>{e.data.title}</a></h3>
+              </article>
+            ))}
+        <p class="side-meta"><a href={`${base}decisions/`}>看全部與決策紀錄 →</a></p>
       </section>
 
       <!-- 巡查紀錄：routine 每次執行都留一筆，沒有新事件也會出現在這裡 -->
