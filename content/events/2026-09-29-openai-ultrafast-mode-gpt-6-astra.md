@@ -4,6 +4,7 @@ title: "OpenAI API 新增 Ultrafast 服務層級（GPT-6 Astra）"
 event_at: "2026-09-29T00:00:00Z"
 verified_at: "2026-10-02T10:00:00+08:00"
 category: pricing
+vendors: [openai]
 status: confirmed
 source_type: official
 weekly_rank: null
@@ -18,6 +19,7 @@ impact: evaluate
 summary: "OpenAI 更新紀錄於 2026-09-29 列出 GPT-6 Astra 的 Ultrafast 模式；官方文件稱它是 OpenAI API 中最快的服務層級，以速度優先於成本。"
 impact_summary: "推論：對延遲敏感、需要大量工具呼叫的代理程式可能值得評估，但價格倍率在文件中未見，需先查定價表再決定。"
 next_check: "查 OpenAI 定價頁確認 Ultrafast 的實際價格，並留意是否擴大到 EU／其他區域處理。"
+next_check_at: "2026-10-16T10:00:00+08:00"
 ---
 
 ## 已確認事實

@@ -4,6 +4,7 @@ title: "OpenAI Agents API 新增 computer use（OpenAI 託管瀏覽器）"
 event_at: "2026-09-29T00:00:00Z"
 verified_at: "2026-10-02T10:00:00+08:00"
 category: agent
+vendors: [openai]
 status: confirmed
 source_type: official
 weekly_rank: null
@@ -18,6 +19,7 @@ impact: monitor
 summary: "OpenAI 更新紀錄於 2026-09-29 列出 Agents API 新增 computer use，讓代理在 OpenAI 託管的瀏覽器中完成任務。"
 impact_summary: "推論：可替代自架瀏覽器自動化來做網站測試與資料蒐集，但官方文件未載明價格與地區，暫不宜納入工作流程。"
 next_check: "查文件或更新紀錄是否補上定價、可用地區與支援模型清單。"
+next_check_at: "2026-10-16T10:00:00+08:00"
 ---
 
 ## 已確認事實

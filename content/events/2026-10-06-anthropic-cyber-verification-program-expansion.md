@@ -4,6 +4,7 @@ title: "Anthropic 擴大 Cyber Verification Program，整併為三層存取"
 event_at: "2026-10-06T00:00:00Z"
 verified_at: "2026-10-07T10:30:00+08:00"
 category: signal
+vendors: [anthropic]
 status: confirmed
 source_type: official
 weekly_rank: null

@@ -4,6 +4,7 @@ title: "GitHub Copilot 推出 HydraFusion 多模型協作（研究預覽）"
 event_at: "2026-09-30T00:00:00Z"
 verified_at: "2026-10-02T10:00:00+08:00"
 category: agent
+vendors: [github]
 status: confirmed
 source_type: official
 weekly_rank: null
@@ -15,6 +16,7 @@ impact: monitor
 summary: "GitHub 於 2026-09-30 公布 HydraFusion 在 VS Code 與 GitHub Copilot app 以研究預覽提供，會協調多個模型（單一、串接升級、批評修正三種模式）完成任務。"
 impact_summary: "推論：若使用 Copilot 付費方案，可在預覽期試用以觀察品質與成本，但預覽功能行為可能改變，不宜用於關鍵流程。"
 next_check: "查 GitHub changelog 是否更新計費（premium request）說明或正式 GA。"
+next_check_at: "2026-10-16T10:00:00+08:00"
 ---
 
 ## 已確認事實

@@ -5,10 +5,10 @@ import EventCard from '../components/EventCard.astro';
 import DailyChart from '../components/DailyChart.astro';
 import CategoryBars from '../components/CategoryBars.astro';
 import ImportancePanel from '../components/ImportancePanel.astro';
-import { getEvents, groupByDay, groupByWeek, latestVerifiedAt, pendingChecks, weeklyHighlights } from '../lib/events';
+import { getEvents, getRuns, groupByDay, groupByVendor, groupByWeek, latestVerifiedAt, pendingChecks, recheckQueue, weeklyHighlights } from '../lib/events';
 import { IMPORTANCE_LABEL, IMPORTANCE_LEVELS, importanceMap, referenceDay } from '../lib/importance';
 import { getBuildMeta } from '../lib/build-meta';
-import { CATEGORY_LABEL, STALE_HOURS, dayIndexLabel, formatDate, formatDateTime, formatMonthDay } from '../lib/format';
+import { CATEGORY_LABEL, RUN_RESULT_LABEL, STALE_HOURS, VENDOR_LABEL, dayIndexLabel, formatDate, formatDateTime, formatMonthDay } from '../lib/format';
 import { CATEGORIES } from '../content/config';
 
 const events = await getEvents();
@@ -20,6 +20,17 @@ const weeks = groupByWeek(events);
 const days = groupByDay(events);
 const latest = events.slice(0, 5);
 const lastVerified = latestVerifiedAt(events);
+const runs = await getRuns();
+const lastRun = runs[0] ?? null;
+// 新鮮度以「最後巡查」為準：routine 沒找到新聞也會留巡查紀錄，所以沒新事件不再被誤判為過期。
+// 還沒有巡查紀錄時退回事件的 verified_at。
+const lastChecked =
+  lastRun && (!lastVerified || lastRun.data.ran_at > lastVerified) ? lastRun.data.ran_at : lastVerified;
+const recentRuns = runs.slice(0, 7);
+const unreadable = (r: (typeof runs)[number]) => r.data.sources_checked.filter((s) => !s.ok).length;
+const recheck = recheckQueue(events);
+const vendorGroups = groupByVendor(events);
+const vendorMax = Math.max(1, ...vendorGroups.map((g) => g.events.length));
 const meta = getBuildMeta();
 const builtAt = new Date(meta.site_built_at);
 const hasExamples = events.some((e) => e.data.example);
@@ -52,11 +63,17 @@ const base = import.meta.env.BASE_URL;
 ---
 <Base wide>
   <section slot="status" class="statusbar" aria-label="版本狀態"
-    id="status" data-last-verified={lastVerified?.toISOString() ?? ''} data-stale-hours={STALE_HOURS}>
-    <p><span class="dot" aria-hidden="true"></span><span class="k">資料查核至</span><span class="v">{lastVerified ? `台北時間 ${formatDateTime(lastVerified)}` : '尚無資料'}</span></p>
+    id="status" data-last-checked={lastChecked?.toISOString() ?? ''} data-stale-hours={STALE_HOURS}>
+    <p>
+      <span class="dot" aria-hidden="true"></span><span class="k">最後巡查</span>
+      {lastRun
+        ? <span class="v">台北時間 {formatDateTime(lastRun.data.ran_at)}・{RUN_RESULT_LABEL[lastRun.data.result]}{unreadable(lastRun) > 0 && `・${unreadable(lastRun)} 個來源讀不到`}</span>
+        : <span class="v">尚無巡查紀錄</span>}
+    </p>
+    <p><span class="k">事件查核至</span><span class="v">{lastVerified ? `台北時間 ${formatDateTime(lastVerified)}` : '尚無資料'}</span></p>
     <p><span class="k">網站發布於</span><span class="v">台北時間 {formatDateTime(builtAt)}</span></p>
     {events.length === 0 && <p>本次查核無新項目。</p>}
-    <p class="stale" id="stale-warning" hidden>資料可能過期：超過 {STALE_HOURS} 小時沒有內容更新。</p>
+    <p class="stale" id="stale-warning" hidden>資料可能過期：超過 {STALE_HOURS} 小時沒有巡查紀錄（routine 可能沒跑，或 PR 尚未合併）。</p>
   </section>
 
   {hasExamples && (
@@ -85,8 +102,8 @@ const base = import.meta.env.BASE_URL;
     </div>
     <div class="kpi kpi-fresh" id="kpi-fresh">
       <p class="kpi-k">資料新鮮度</p>
-      <p class="kpi-v" id="fresh-v">{lastVerified ? formatDate(lastVerified).slice(5).replace('-', '/') : '—'}</p>
-      <p class="kpi-s" id="fresh-s">{lastVerified ? `最後查核 ${formatDateTime(lastVerified).slice(11)}（台北）` : '尚無資料'}</p>
+      <p class="kpi-v" id="fresh-v">{lastChecked ? formatDate(lastChecked).slice(5).replace('-', '/') : '—'}</p>
+      <p class="kpi-s" id="fresh-s">{lastChecked ? `最後巡查 ${formatDateTime(lastChecked).slice(11)}（台北）` : '尚無資料'}</p>
     </div>
   </section>
 
@@ -128,6 +145,16 @@ const base = import.meta.env.BASE_URL;
       <ImportancePanel events={events} imp={imp} />
       <h3 class="sub-h">類別分布 <small>共 {events.length} 則</small></h3>
       <CategoryBars events={events} />
+      <h3 class="sub-h">廠商分布 <small>可複選，點名稱看該廠商全部事件</small></h3>
+      <ul class="hbars vendor-bars" aria-label="廠商分布">
+        {vendorGroups.map((g) => (
+          <li>
+            <span class="hb-label"><a href={`${base}vendors/${g.vendor}/`}>{VENDOR_LABEL[g.vendor]}</a></span>
+            <span class="hb-track" aria-hidden="true"><span class="hb-fill" style={`width:${(g.events.length / vendorMax) * 100}%`}></span></span>
+            <span class="hb-num"><b>{g.events.length}</b><small>{Math.round((g.events.length / (events.length || 1)) * 100)}%</small></span>
+          </li>
+        ))}
+      </ul>
     </section>
   </div>
 
@@ -151,6 +178,12 @@ const base = import.meta.env.BASE_URL;
           <button type="button" data-imp="4" aria-pressed="true">所有等級</button>
           <button type="button" data-imp="2" aria-pressed="false">P1–P2</button>
           <button type="button" data-imp="1" aria-pressed="false">僅 P1</button>
+        </div>
+        <div class="chips chips-vendor" role="group" aria-label="廠商">
+          <button type="button" data-vendor="all" aria-pressed="true">所有廠商</button>
+          {vendorGroups.map((g) => (
+            <button type="button" data-vendor={g.vendor} aria-pressed="false">{VENDOR_LABEL[g.vendor]}</button>
+          ))}
         </div>
         <div class="row">
           <input type="search" id="q" placeholder="關鍵字搜尋" aria-label="關鍵字搜尋" />
@@ -186,6 +219,7 @@ const base = import.meta.env.BASE_URL;
                   <li
                     class="tl-item"
                     data-category={e.data.category}
+                    data-vendors={e.data.vendors.join(' ')}
                     data-rank={imp.get(e.id)!.rank}
                     data-score={imp.get(e.id)!.score}
                     data-event={e.data.event_at.getTime()}
@@ -205,6 +239,31 @@ const base = import.meta.env.BASE_URL;
     </section>
 
     <aside class="board-side">
+      <!-- 追蹤排程：有 next_check_at 的事件，最先到期的在前；是否「已到期」由下方 script 依閱讀當下時間標示 -->
+      <section class="panel" aria-labelledby="h-recheck" data-section="recheck">
+        <div class="panel-head">
+          <h2 id="h-recheck">到期待查</h2>
+          <span class="panel-note" id="recheck-note">{recheck.length} 項排程</span>
+        </div>
+        {recheck.length === 0
+          ? <p class="empty">目前沒有排定核對日期的事件。</p>
+          : (
+            <ol class="recheck" id="recheck">
+              {recheck.slice(0, 6).map((e) => (
+                <li class="side-item" data-due={e.data.next_check_at!.toISOString()}>
+                  <div class="ev-tags">
+                    <time class="due" datetime={e.data.next_check_at!.toISOString()}>{formatMonthDay(e.data.next_check_at!)} 到期</time>
+                    {e.data.vendors.map((v) => <span class="badge vendor">{VENDOR_LABEL[v]}</span>)}
+                  </div>
+                  <h3><a href={`${base}events/${e.id}/`}>{e.data.title}</a></h3>
+                  <p><span class="label">要核對</span>{e.data.next_check}</p>
+                </li>
+              ))}
+            </ol>
+          )}
+        {recheck.length > 6 && <p class="side-meta">另有 {recheck.length - 6} 項較晚到期，見各事件頁。</p>}
+      </section>
+
       <!-- 待查事項（最多 3 項，明確標「未驗證」） -->
       <section class="panel" aria-labelledby="h-pending" data-section="pending">
         <div class="panel-head"><h2 id="h-pending">待查事項</h2><span class="panel-note">{pending.length} 項</span></div>
@@ -243,6 +302,31 @@ const base = import.meta.env.BASE_URL;
             ))}
       </section>
 
+      <!-- 巡查紀錄：routine 每次執行都留一筆，沒有新事件也會出現在這裡 -->
+      <section class="panel" aria-labelledby="h-runs" data-section="runs">
+        <div class="panel-head"><h2 id="h-runs">巡查紀錄</h2><span class="panel-note">最近 {recentRuns.length} 次</span></div>
+        {recentRuns.length === 0
+          ? <p class="empty">尚無巡查紀錄。</p>
+          : (
+            <ol class="runs">
+              {recentRuns.map((r) => (
+                <li class={`run run-${r.data.result}`}>
+                  <time datetime={r.data.ran_at.toISOString()}>{formatMonthDay(r.data.ran_at)} {formatDateTime(r.data.ran_at).slice(11)}</time>
+                  <span class="run-result">
+                    {RUN_RESULT_LABEL[r.data.result]}
+                    {r.data.events_added.length > 0 && `・新增 ${r.data.events_added.length}`}
+                    {r.data.events_updated.length > 0 && `・更新 ${r.data.events_updated.length}`}
+                  </span>
+                  <span class="run-src">
+                    來源 {r.data.sources_checked.length - unreadable(r)}/{r.data.sources_checked.length}
+                    {unreadable(r) > 0 && <b class="run-warn" title={r.data.sources_checked.filter((s) => !s.ok).map((s) => s.url).join('\n')}>・{unreadable(r)} 讀不到</b>}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+      </section>
+
       <section class="panel panel-legend" aria-label="閱讀說明">
         <h2 class="sub-h">怎麼讀這個儀表板</h2>
         <ul class="howto">
@@ -258,7 +342,7 @@ const base = import.meta.env.BASE_URL;
 <script>
   // 過期判斷與新鮮度必須在「閱讀當下」算，靜態建置時間無法代表使用者打開頁面的時間。
   const status = document.getElementById('status');
-  const last = status?.dataset.lastVerified;
+  const last = status?.dataset.lastChecked;
   const hours = Number(status?.dataset.staleHours ?? 96);
   if (last) {
     const age = (Date.now() - new Date(last).getTime()) / 3600000;
@@ -266,13 +350,29 @@ const base = import.meta.env.BASE_URL;
     const s = document.getElementById('fresh-s');
     if (v && s && age >= 0) {
       v.innerHTML = age < 48 ? `${Math.floor(age)}<small>小時前</small>` : `${Math.floor(age / 24)}<small>天前</small>`;
-      s.textContent = age > hours ? `已超過 ${hours} 小時未更新` : `${hours} 小時內視為新鮮`;
+      s.textContent = age > hours ? `已超過 ${hours} 小時沒有巡查` : `最後巡查・${hours} 小時內視為新鮮`;
     }
     if (age > hours) {
       document.getElementById('stale-warning')?.removeAttribute('hidden');
       status?.classList.add('is-stale');
       document.getElementById('kpi-fresh')?.classList.add('kpi-warn');
     }
+  }
+
+  // 到期待查：依閱讀當下時間標示已到期項目。
+  const recheck = document.getElementById('recheck');
+  if (recheck) {
+    let overdue = 0;
+    recheck.querySelectorAll<HTMLElement>('[data-due]').forEach((li) => {
+      if (new Date(li.dataset.due!).getTime() <= Date.now()) {
+        overdue++;
+        const t = li.querySelector('.due')!;
+        t.classList.add('is-overdue');
+        t.textContent = t.textContent!.replace(/ 到期$/, ' 已到期');
+      }
+    });
+    const note = document.getElementById('recheck-note');
+    if (note && overdue > 0) note.textContent = `${overdue} 項已到期・${note.textContent}`;
   }
 
   const tl = document.getElementById('tl');
@@ -284,11 +384,13 @@ const base = import.meta.env.BASE_URL;
     const homes = new Map(items.map((el) => [el, el.parentElement!]));
     const catBtns = Array.from(filters.querySelectorAll<HTMLButtonElement>('[data-cat]'));
     const impBtns = Array.from(filters.querySelectorAll<HTMLButtonElement>('[data-imp]'));
+    const vendorBtns = Array.from(filters.querySelectorAll<HTMLButtonElement>('[data-vendor]'));
     const q = document.getElementById('q') as HTMLInputElement;
     const sort = document.getElementById('sort') as HTMLSelectElement;
     const noMatch = document.getElementById('no-match')!;
     const count = document.getElementById('tl-count')!;
     let cat = 'all';
+    let vendor = 'all';
     let maxRank = 4;
 
     const apply = () => {
@@ -298,6 +400,7 @@ const base = import.meta.env.BASE_URL;
       for (const el of items) {
         const ok =
           (cat === 'all' || el.dataset.category === cat) &&
+          (vendor === 'all' || el.dataset.vendors!.split(' ').includes(vendor)) &&
           Number(el.dataset.rank) <= maxRank &&
           (!term || el.dataset.text!.includes(term));
         el.hidden = !ok;
@@ -316,7 +419,7 @@ const base = import.meta.env.BASE_URL;
         tl.hidden = true;
         flat.hidden = false;
       }
-      const filtered = cat !== 'all' || maxRank < 4 || term !== '';
+      const filtered = cat !== 'all' || vendor !== 'all' || maxRank < 4 || term !== '';
       tl.classList.toggle('is-filtered', filtered);
       tl.querySelectorAll<HTMLElement>('.tl-day').forEach((d) => {
         d.hidden = mode === 'event' && !d.querySelector('.tl-item:not([hidden])');
@@ -335,6 +438,7 @@ const base = import.meta.env.BASE_URL;
       );
     bindGroup(catBtns, (b) => (cat = b.dataset.cat ?? 'all'));
     bindGroup(impBtns, (b) => (maxRank = Number(b.dataset.imp ?? 4)));
+    bindGroup(vendorBtns, (b) => (vendor = b.dataset.vendor ?? 'all'));
     q.addEventListener('input', apply);
     sort.addEventListener('change', apply);
   }

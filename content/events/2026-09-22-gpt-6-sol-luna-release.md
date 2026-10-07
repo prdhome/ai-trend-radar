@@ -4,6 +4,7 @@ title: "OpenAI 發布 GPT-6 Sol 與 GPT-6 Luna"
 event_at: "2026-09-22T00:00:00+08:00"
 verified_at: "2026-09-26T20:50:25+08:00"
 category: model
+vendors: [openai]
 status: reported
 source_type: third_party
 weekly_rank: null
@@ -21,6 +22,7 @@ impact: monitor
 summary: "OpenAI 於 2026-09-22 推出 GPT-6 Sol（互動與 agentic coding 用的平衡型模型）與 GPT-6 Luna（輕量、低成本、適合大量小任務）；API 價格較 GPT-5.6 系列促銷價再降 50%，並開放 ChatGPT、Codex、API 等管道。official openai.com 公告頁本次無法直接存取（403），以上依 OpenAI 官方社群公告、GitHub Changelog 與 TechCrunch 報導交叉確認。"
 impact_summary: "推論：這是與 Claude Opus 5.5（見 2026-09-22-claude-opus-5-5-release）同一天發布的競品模型更新，兩者都主打「降低成本＋維持或提升效能」；值得在下次比較模型選型時，把 GPT-6 Sol／Luna 的實際任務表現與 Opus 5.5 放在一起評估，而不是只看官方各自宣稱的數字。"
 next_check: "openai.com 官方公告頁能否改用其他方式存取（例如換 User-Agent 或走瀏覽器而非直接 curl／WebFetch），若能存取，補上官方逐項定價（每百萬 token 的 input／output 價格），目前只確認到「較 GPT-5.6 促銷價降 50%」這個相對數字。"
+next_check_at: "2026-10-10T10:00:00+08:00"
 ---
 
 ## 已確認事實

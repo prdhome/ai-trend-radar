@@ -4,6 +4,7 @@ title: "Anthropic 宣布 Claude Frontier Academy：1 億美元培訓 1 萬名工
 event_at: "2026-10-02T00:00:00Z"
 verified_at: "2026-10-03T10:30:00+08:00"
 category: signal
+vendors: [anthropic]
 status: confirmed
 source_type: official
 weekly_rank: null
@@ -15,6 +16,7 @@ impact: monitor
 summary: "Anthropic 於 2026-10-02 宣布投入 1 億美元，目標在 2027 年底前培訓 1 萬名 Frontier Deployed Engineer。"
 impact_summary: "推論：反映企業導入 Claude 的人才缺口；對個人使用者無直接影響，僅作產業訊號追蹤。"
 next_check: "觀察首批認證（官方稱預計 2027 年初）與後續擴大招收的公告。"
+next_check_at: "2027-01-15T10:00:00+08:00"
 ---
 
 ## 已確認事實

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // 跨檔案內容檢查（PRD v0.2 §6.1：zod schema 管不到的部分）。
 //
-//   ERROR（exit 1，擋 CI）：重複 id、id 與檔名不符、內部連結／event_id／related_events 指向不存在的事件
-//   WARN （exit 0，只提醒）：verified_at 超過 48 小時且沒有對應 correction
+//   ERROR（exit 1，擋 CI）：重複 id、id 與檔名不符、內部連結／event_id／related_events／巡查紀錄的事件 id 指向不存在的事件
+//   WARN （exit 0，只提醒）：verified_at 超過 48 小時且沒有對應 correction；next_check_at 已到期；最新巡查紀錄超過 48 小時
 //
 // 外部來源 URL 存活檢查另見 scripts/check-urls.mjs（warn-only）。
 // 測試用：RADAR_NOW=2026-09-26T12:00:00+08:00 可固定「現在時間」。
@@ -19,6 +19,7 @@ if (Number.isNaN(now.getTime())) {
 const events = readCollection('events');
 const corrections = readCollection('corrections');
 const decisions = readCollection('decisions');
+const runs = readCollection('runs');
 const errors = [];
 const warnings = [];
 const err = (msg, file) => { errors.push({ msg, file }); report('error', msg, file); };
@@ -39,6 +40,7 @@ function checkIds(entries, label) {
 const eventIds = checkIds(events, '事件');
 checkIds(corrections, 'correction');
 checkIds(decisions, 'decision');
+checkIds(runs, '巡查紀錄');
 
 // 2. 內部連結：Markdown 內文的 `/events/<id>/` 連結，以及 correction.event_id、decision.related_events
 const LINK = /\]\(\s*<?\/events\/([^/)\s>#?]*)\/?[^)]*\)/g;
@@ -58,6 +60,14 @@ for (const d of decisions) {
   }
 }
 
+for (const r of runs) {
+  for (const key of ['events_added', 'events_updated']) {
+    for (const id of r.data[key] ?? []) {
+      if (!eventIds.has(id)) err(`${key} 的「${id}」指向不存在的事件`, r.file);
+    }
+  }
+}
+
 // 3. 查核過期提醒：verified_at 超過 48 小時、且沒有對應 correction（只提醒，不擋 CI）
 const corrected = new Set(corrections.map((c) => c.data.event_id).filter(Boolean));
 for (const e of events) {
@@ -72,11 +82,32 @@ for (const e of events) {
   }
 }
 
+// 4. 追蹤排程到期提醒：next_check_at 已過，routine 應先重新核對並更新 verified_at／next_check_at（只提醒）
+for (const e of events) {
+  const due = e.data.next_check_at ? new Date(e.data.next_check_at) : null;
+  if (!due || Number.isNaN(due.getTime())) continue;
+  if (due.getTime() <= now.getTime()) {
+    const days = Math.floor((now.getTime() - due.getTime()) / 86_400_000);
+    warn(`next_check_at 已到期（${days} 天前）：${e.data.next_check ?? '（未寫 next_check）'}`, e.file);
+  }
+}
+
+// 5. 巡查紀錄新鮮度：最新一筆超過 48 小時代表 routine 漏跑或 PR 未合併（只提醒）
+const lastRun = runs
+  .map((r) => ({ r, t: r.data.ran_at ? new Date(r.data.ran_at).getTime() : NaN }))
+  .filter((x) => !Number.isNaN(x.t))
+  .sort((a, b) => b.t - a.t)[0];
+if (!lastRun) {
+  warn('content/runs/ 還沒有任何巡查紀錄');
+} else if ((now.getTime() - lastRun.t) / 3_600_000 > STALE_HOURS) {
+  warn(`最新巡查紀錄已超過 ${STALE_HOURS} 小時（${lastRun.r.file}）`, lastRun.r.file);
+}
+
 // 摘要：寫進 GitHub Actions job summary，審核者在 PR 的 Checks 頁就看得到
 const summary = [
   '## 內容跨檔案檢查',
   '',
-  `- 事件 ${events.length} 則、correction ${corrections.length} 則、decision ${decisions.length} 則`,
+  `- 事件 ${events.length} 則、correction ${corrections.length} 則、decision ${decisions.length} 則、巡查紀錄 ${runs.length} 筆`,
   `- ❌ 錯誤 ${errors.length} 項（擋合併）`,
   `- ⚠️ 提醒 ${warnings.length} 項（不擋合併，請審核者留意）`,
   '',

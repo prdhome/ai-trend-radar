@@ -1,0 +1,47 @@
+---
+/** 廠商頁：某廠商的全部事件（新到舊）。只為「至少有一則事件」的廠商產生頁面。 */
+import Base from '../../layouts/Base.astro';
+import EventCard from '../../components/EventCard.astro';
+import { getEvents, groupByVendor, type EventEntry } from '../../lib/events';
+import { importanceMap } from '../../lib/importance';
+import { VENDOR_LABEL, formatDate } from '../../lib/format';
+
+export async function getStaticPaths() {
+  const events = await getEvents();
+  const groups = groupByVendor(events);
+  return groups.map((g) => ({
+    params: { vendor: g.vendor },
+    props: { vendor: g.vendor, list: g.events, all: groups.map((x) => ({ vendor: x.vendor, n: x.events.length })) },
+  }));
+}
+
+interface Props {
+  vendor: string;
+  list: EventEntry[];
+  all: { vendor: string; n: number }[];
+}
+const { vendor, list, all } = Astro.props;
+// 重要度的新近度基準是全部事件中最新的事件日，所以用整個 collection 算。
+const imp = importanceMap(await getEvents());
+const label = VENDOR_LABEL[vendor];
+const base = import.meta.env.BASE_URL;
+const known = list.filter((e) => !e.data.date_unknown);
+const range = known.length > 0 ? `${formatDate(known[known.length - 1].data.event_at)} – ${formatDate(known[0].data.event_at)}` : '';
+---
+<Base title={`${label} 的事件`}>
+  <nav class="crumb" aria-label="頁面導覽"><a href={base}>← 回首頁</a></nav>
+  <h1 class="page-h">{label}</h1>
+  <p class="page-sub">共 {list.length} 則事件{range && `・${range}（台北時間）`}</p>
+
+  <nav class="chips vendor-nav" aria-label="其他廠商">
+    {all.map((x) => (
+      <a href={`${base}vendors/${x.vendor}/`} aria-current={x.vendor === vendor ? 'page' : undefined}>
+        {VENDOR_LABEL[x.vendor]} <small>{x.n}</small>
+      </a>
+    ))}
+  </nav>
+
+  <section class="panel">
+    <div class="focus-list">{list.map((e) => <EventCard event={e} imp={imp.get(e.id)!} variant="focus" />)}</div>
+  </section>
+</Base>

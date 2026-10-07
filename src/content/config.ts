@@ -14,6 +14,7 @@ import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 
 const ID = /^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const DAY_ID = /^\d{4}-\d{2}-\d{2}$/;
 
 /** ISO 8601 且必須帶時區（`Z` 或 `+08:00`），避免「沒寫時區」被當成 UTC 而在台北時間顯示錯一天。 */
 const isoDateTime = z.union([
@@ -32,6 +33,21 @@ export const CATEGORIES = ['model', 'agent', 'pricing', 'signal'] as const;
 export const STATUSES = ['confirmed', 'reported', 'unverified', 'corrected'] as const;
 export const SOURCE_TYPES = ['official', 'third_party', 'personal_test'] as const;
 export const IMPACTS = ['action', 'evaluate', 'monitor', 'none'] as const;
+/** 事件涉及的廠商；列舉而非自由文字，篩選與 /vendors/<x>/ 頁才不會因拼法不同而分裂。新增廠商時同步 lib/format.ts 的 VENDOR_LABEL。 */
+export const VENDORS = [
+  'openai',
+  'anthropic',
+  'google',
+  'github',
+  'microsoft',
+  'aws',
+  'meta',
+  'xai',
+  'mistral',
+  'deepseek',
+  'other',
+] as const;
+export const RUN_RESULTS = ['new_items', 'updates_only', 'no_new_items'] as const;
 
 const events = defineCollection({
   loader: glob({ pattern: ['*.md', '!README.md'], base: './content/events' }),
@@ -44,6 +60,8 @@ const events = defineCollection({
       date_unknown: z.boolean().default(false),
       verified_at: isoDateTime,
       category: z.enum(CATEGORIES),
+      /** 涉及的廠商（第一個為主要廠商）；多家合作或跨平台事件可列多個。 */
+      vendors: z.array(z.enum(VENDORS)).min(1, '至少要標一個廠商（不確定時用 other）'),
       status: z.enum(STATUSES),
       source_type: z.enum(SOURCE_TYPES),
       sources: z.array(source).min(1, '每個事件至少要有一個原始來源（PRD §4 第 1 點）'),
@@ -58,10 +76,16 @@ const events = defineCollection({
       impact_summary: z.string().min(1),
       /** 詳情頁「下次需核對的條件」。 */
       next_check: z.string().optional(),
+      /** 下次核對的到期時間；routine 每次先處理到期事件。必須搭配 `next_check` 說明要核對什麼。 */
+      next_check_at: isoDateTime.optional(),
       /** 格式範例／假資料；頁面會加上「範例」標記。 */
       example: z.boolean().default(false),
     })
-    .strict(),
+    .strict()
+    .refine((d) => !d.next_check_at || d.next_check, {
+      message: '有 next_check_at 時必須寫 next_check（說明到期要核對什麼）',
+      path: ['next_check'],
+    }),
 });
 
 const corrections = defineCollection({
@@ -97,4 +121,50 @@ const decisions = defineCollection({
     .strict(),
 });
 
-export const collections = { events, corrections, decisions };
+/**
+ * 巡查紀錄：routine 每次執行都寫一筆（同一天多次執行就更新當天檔案），沒有新事件也要寫。
+ * 首頁用它區分「routine 有跑但沒新聞」與「routine 沒跑／沒合併」，不再只靠事件的 verified_at 判斷新鮮度。
+ */
+const runs = defineCollection({
+  loader: glob({ pattern: ['*.md', '!README.md'], base: './content/runs' }),
+  schema: z
+    .object({
+      /** 台北日期 YYYY-MM-DD，與檔名相同。 */
+      // YAML 會把沒加引號的 2026-10-08 解析成 Date（UTC 午夜），轉回字串再驗格式，寫法不管有沒有引號都能過。
+      id: z.preprocess(
+        (v) => (v instanceof Date ? v.toISOString().slice(0, 10) : v),
+        z.string().regex(DAY_ID, 'id 必須是 YYYY-MM-DD（台北日期），並與檔名相同'),
+      ),
+      ran_at: isoDateTime,
+      result: z.enum(RUN_RESULTS),
+      sources_checked: z
+        .array(
+          z
+            .object({
+              url: z.url({ protocol: /^https?$/ }),
+              /** 這次是否實際讀到內容（不是 HTTP 狀態碼，是 routine 能否讀取並查核）。 */
+              ok: z.boolean(),
+              note: z.string().optional(),
+            })
+            .strict(),
+        )
+        .min(1, '至少列出一個本次檢查的來源'),
+      events_added: z.array(z.string().regex(ID)).default([]),
+      events_updated: z.array(z.string().regex(ID)).default([]),
+    })
+    .strict()
+    .refine((r) => r.result !== 'new_items' || r.events_added.length > 0, {
+      message: 'result: new_items 時 events_added 不可為空',
+      path: ['events_added'],
+    })
+    .refine((r) => r.result !== 'updates_only' || (r.events_added.length === 0 && r.events_updated.length > 0), {
+      message: 'result: updates_only 時 events_added 必須為空、events_updated 不可為空',
+      path: ['events_updated'],
+    })
+    .refine((r) => r.result !== 'no_new_items' || (r.events_added.length === 0 && r.events_updated.length === 0), {
+      message: 'result: no_new_items 時 events_added／events_updated 都必須為空',
+      path: ['result'],
+    }),
+});
+
+export const collections = { events, corrections, decisions, runs };

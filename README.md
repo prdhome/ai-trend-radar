@@ -6,8 +6,6 @@
 - 網址（啟用 Pages 後）：<https://prdhome.github.io/ai-trend-radar/>
 - 規格：AI Trend Radar MVP PRD v0.2（修訂自 v0.1）
 
-> 目前 `content/events/` 只有 3 則**格式範例**（`example: true`，內容純屬虛構），會在第一批已查核事件進站時移除。
-
 ## 更新流程
 
 ```
@@ -15,6 +13,7 @@
 ```
 
 - 網站只顯示**合併進 `main` 並成功部署**的內容，不宣稱即時。
+- 每次巡查都開 PR（沒有新事件時只含 `content/runs/` 巡查紀錄）；首頁超過 48 小時沒有巡查紀錄就顯示「資料可能過期」。
 - 頁尾顯示 `site_built_at`、合併 commit 與來源 PR 連結（取代內容檔的 `reviewed_by`；誰核准了什麼，以 PR 紀錄為準）。
 
 ## 目錄
@@ -25,6 +24,7 @@
 | `content/events/` | 一事一檔（`YYYY-MM-DD-slug.md`），Dashboard 主體；「本週重點」＝ `weekly_rank` 不為 null 的事件 |
 | `content/decisions/` | 使用者核准的個人決策（CODEOWNERS＋label gate 保護） |
 | `content/corrections/` | 已發布資訊的修正紀錄（CODEOWNERS＋label gate 保護） |
+| `content/runs/` | 每次 routine 巡查的紀錄（檢查了哪些來源、結果），沒有新事件也寫；首頁「最後巡查」與新鮮度依此判斷 |
 | `ops/sources.md` | 官方查核來源清單 |
 | `ops/prompts/` | Claude Cloud 更新／稽核提示 |
 | `src/content/config.ts` | zod 內容 schema（型別錯誤會讓 build 失敗） |
@@ -57,6 +57,8 @@ npm run build        # 輸出 dist/
 | `astro check`（zod schema：欄位、型別、列舉、URL 格式、至少一個來源） | ❌ 擋合併 |
 | 重複 `id`、`id` 與檔名不符、內部連結／`event_id`／`related_events` 指向不存在事件 | ❌ 擋合併 |
 | `verified_at` 超過 48 小時且無 correction | ⚠️ 只提醒（job summary） |
+| `next_check_at` 已到期、最新巡查紀錄超過 48 小時 | ⚠️ 只提醒（job summary） |
+| 巡查紀錄的 `events_added`／`events_updated` 指向不存在事件 | ❌ 擋合併 |
 | 來源 URL 存活 | ⚠️ 只提醒 |
 | `astro build` | ❌ 擋合併 |
 | PR 觸及 `content/decisions/**`／`content/corrections/**` 卻沒有 `decision-approved` label | ❌ 擋合併 |
