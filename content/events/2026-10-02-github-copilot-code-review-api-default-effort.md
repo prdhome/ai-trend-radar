@@ -4,6 +4,7 @@ title: "GitHub Copilot code review 支援 REST／GraphQL API，預設強度改�
 event_at: "2026-10-02T00:00:00Z"
 verified_at: "2026-10-05T10:30:00+08:00"
 category: agent
+vendors: [github]
 status: confirmed
 source_type: official
 weekly_rank: null
@@ -15,6 +16,7 @@ impact: evaluate
 summary: "GitHub 於 2026-10-02 宣布 Copilot code review 可透過 REST 與 GraphQL API 發起並逐次指定審查強度，且預設強度自 9 月 28 日起改為 Balanced。"
 impact_summary: "推論：可把 Copilot 審查接進既有腳本或內部工具；預設強度改變可能讓審查行為與耗用與先前不同，需留意。"
 next_check: "查 GitHub 文件確認 API 的具體端點與各強度對用量／計費的影響。"
+next_check_at: "2026-10-19T10:00:00+08:00"
 ---
 
 ## 已確認事實

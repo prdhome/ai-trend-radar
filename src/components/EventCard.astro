@@ -8,7 +8,7 @@
 import type { EventEntry } from '../lib/events';
 import type { Importance } from '../lib/importance';
 import ImportanceBadge from './ImportanceBadge.astro';
-import { CATEGORY_LABEL, IMPACT_LABEL, SOURCE_TYPE_LABEL, STATUS_LABEL, formatMonthDay } from '../lib/format';
+import { CATEGORY_LABEL, IMPACT_LABEL, SOURCE_TYPE_LABEL, STATUS_LABEL, VENDOR_LABEL, formatMonthDay } from '../lib/format';
 
 interface Props {
   event: EventEntry;
@@ -30,6 +30,7 @@ const date = d.date_unknown ? '日期未知' : formatMonthDay(d.event_at);
       <ImportanceBadge imp={imp} showScore={variant === 'focus'} />
       <span class={`badge ${d.status}`}>{STATUS_LABEL[d.status]}</span>
       <span class="badge cat">{CATEGORY_LABEL[d.category]}</span>
+      {d.vendors.map((v) => <a class="badge vendor" href={`${import.meta.env.BASE_URL}vendors/${v}/`}>{VENDOR_LABEL[v]}</a>)}
       {d.example && <span class="badge example">範例資料</span>}
       {variant === 'focus' && (
         <time class="ev-date" datetime={d.event_at.toISOString()}>{date}</time>

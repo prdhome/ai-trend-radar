@@ -4,6 +4,7 @@ title: "Claude Cowork 併入一般對話介面"
 event_at: "2026-09-16T00:00:00+08:00"
 verified_at: "2026-09-26T20:50:25+08:00"
 category: agent
+vendors: [anthropic]
 status: confirmed
 source_type: official
 weekly_rank: null
@@ -15,6 +16,7 @@ impact: evaluate
 summary: "Anthropic 於 2026-09-16 宣布 Claude Cowork 與一般對話合併成單一介面：Claude 自動判斷任務該用哪種模式處理，不再需要使用者自己選 Cowork 或 Chat；同時推出 Claude Docs、Claude Slides，Claude Design 也整合進對話中。先在 Pro／Max 方案推出，Team／Free 稍後跟進，Enterprise 管理員會收到至少 30 天的事前通知。"
 impact_summary: "推論：目前工作流程裡有依「資料夾根目錄名稱是否為 Cowork」觸發的專案初始化技能，這個判斷基礎（獨立 Cowork 介面）之後可能不存在；等 rollout 實際落到帳號上後，需要重新確認 Cowork 專屬技能的觸發條件是否仍然成立，或該改用一般對話流程。"
 next_check: "確認帳號的 Pro／Max 方案是否已收到這次介面合併，以及既有 Cowork 專屬工作流程（如專案資料夾初始化）在合併後的對話介面下是否仍照舊運作。"
+next_check_at: "2026-10-10T10:00:00+08:00"
 ---
 
 ## 已確認事實

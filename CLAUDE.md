@@ -13,6 +13,7 @@
 6. **修正要留紀錄**：推翻舊結論時，把事件 `status` 改為 `corrected`，並提出 `content/corrections/` 紀錄保留舊說法；不靜默刪除。
 7. **時間**：ISO 8601 且帶時區，介面顯示 Asia/Taipei。
 8. **本週重點**用事件的 `weekly_rank`（1–5）／`featured` 欄位，不建立 `content/weekly/`。
+   每個事件標 `vendors`（列舉值見 schema；不確定用 `other`），有後續要查的事件同時寫 `next_check` 與 `next_check_at`。
 9. **不要加 `reviewed_by`**：你不是審核者，也不能替使用者簽核。審核證據是 PR 紀錄與部署時的 build metadata。
 
 ## 決策與修正（PRD v0.2 §7.1）
@@ -25,7 +26,8 @@
 
 - 只推分支、只開 PR；**不得直接推 `main`，不得合併自己的 PR**。
 - PR 描述需包含：新增／修正了什麼、每個重大主張的來源、哪些仍是推論、是否觸及既有決策。
-- 當次查核沒有值得新增或更正的事件時，不開空 PR，在任務紀錄說明「本次查核無新項目」。
+- 每次巡查都要寫 `content/runs/YYYY-MM-DD.md`（台北日期，同日重跑就更新當天檔案），列出實際檢查的來源與結果。
+  沒有值得新增或更正的事件時，`result: no_new_items`，**仍然開 PR**（只含巡查紀錄），首頁才能區分「沒新聞」與「routine 沒跑」。
 
 ## 驗證指令
 

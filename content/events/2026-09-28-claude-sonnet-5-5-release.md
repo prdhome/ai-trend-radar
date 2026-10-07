@@ -4,6 +4,7 @@ title: "Anthropic 發布 Claude Sonnet 5.5"
 event_at: "2026-09-28T00:00:00+08:00"
 verified_at: "2026-10-01T10:30:00+08:00"
 category: model
+vendors: [anthropic]
 status: confirmed
 source_type: official
 weekly_rank: 2
@@ -18,6 +19,7 @@ impact: evaluate
 summary: "Anthropic 於 2026-09-28 推出 Claude Sonnet 5.5，官方稱輸出速度比 Sonnet 5 快 30% 以上、每項任務成本最多低 30%，每百萬 token 單價不變（input $2／output $10）。"
 impact_summary: "推論：單價不變但 token 用量下降，對以 Sonnet 為預設模型的 agent 工作流可能直接省成本，值得拿自己的工作負載實測。"
 next_check: "7 天後查是否有獨立評測驗證「每任務成本最多低 30%」與速度提升，並確認 Terminal-Bench 數字的比較基準。"
+next_check_at: "2026-10-08T10:00:00+08:00"
 ---
 
 ## 已確認事實

@@ -4,6 +4,7 @@ title: "OpenAI API 使用層級由五層簡化為 Build／Launch／Grow 三層"
 event_at: "2026-10-06T00:00:00Z"
 verified_at: "2026-10-07T10:30:00+08:00"
 category: pricing
+vendors: [openai]
 status: confirmed
 source_type: official
 weekly_rank: null
@@ -18,6 +19,7 @@ impact: monitor
 summary: "OpenAI 於 2026-10-06 把 API 使用層級從五層簡化為 Build／Launch／Grow 三層，依累計儲值金額自動升級。"
 impact_summary: "推論：若使用 OpenAI API，額度與速率上限以新層級表為準；僅使用 ChatGPT 訂閱者無影響。"
 next_check: "確認既有組織如何對應到新層級（官方頁未說明）。"
+next_check_at: "2026-10-21T10:00:00+08:00"
 ---
 
 ## 已確認事實

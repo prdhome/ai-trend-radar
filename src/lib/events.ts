@@ -23,6 +23,35 @@ export function pendingChecks(events: EventEntry[]): EventEntry[] {
   return events.filter((e) => e.data.status === 'unverified').slice(0, 3);
 }
 
+export type RunEntry = CollectionEntry<'runs'>;
+
+/** 巡查紀錄，新到舊。 */
+export async function getRuns(): Promise<RunEntry[]> {
+  const all = await getCollection('runs');
+  return all.sort((a, b) => b.data.ran_at.getTime() - a.data.ran_at.getTime());
+}
+
+/** 排了 `next_check_at` 的事件，依到期時間早到晚（最先到期的在前）。「是否已到期」要在閱讀當下判斷，這裡不過濾。 */
+export function recheckQueue(events: EventEntry[]): EventEntry[] {
+  return events
+    .filter((e) => e.data.next_check_at)
+    .sort((a, b) => a.data.next_check_at!.getTime() - b.data.next_check_at!.getTime());
+}
+
+/** 依廠商分組（事件可屬多個廠商），只回傳有事件的廠商，依事件數多到少。 */
+export function groupByVendor(events: EventEntry[]): { vendor: string; events: EventEntry[] }[] {
+  const groups = new Map<string, EventEntry[]>();
+  for (const e of events) {
+    for (const v of e.data.vendors) {
+      if (!groups.has(v)) groups.set(v, []);
+      groups.get(v)!.push(e);
+    }
+  }
+  return [...groups.entries()]
+    .map(([vendor, list]) => ({ vendor, events: list }))
+    .sort((a, b) => b.events.length - a.events.length || a.vendor.localeCompare(b.vendor));
+}
+
 export function latestVerifiedAt(events: EventEntry[]): Date | null {
   if (events.length === 0) return null;
   return new Date(Math.max(...events.map((e) => e.data.verified_at.getTime())));

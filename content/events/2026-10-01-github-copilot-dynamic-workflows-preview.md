@@ -4,6 +4,7 @@ title: "GitHub Copilot CLI 與 Copilot app 推出 dynamic workflows（公開預�
 event_at: "2026-10-01T00:00:00Z"
 verified_at: "2026-10-05T10:30:00+08:00"
 category: agent
+vendors: [github]
 status: confirmed
 source_type: official
 weekly_rank: null
@@ -15,6 +16,7 @@ impact: evaluate
 summary: "GitHub 於 2026-10-01 公布 Copilot CLI、Copilot app 與 Copilot SDK 的 dynamic workflows，可用程式碼定義多代理編排，目前為公開預覽、所有 Copilot 方案可用。"
 impact_summary: "推論：需要可重複、可暫停審核的多步驟代理流程時值得試用，但預覽階段內容可能變動，不宜直接用於正式流程。"
 next_check: "每週查 GitHub Changelog，確認何時轉為正式版，以及 CLI 是否不再需要 experimental 旗標。"
+next_check_at: "2026-10-12T10:00:00+08:00"
 ---
 
 ## 已確認事實

@@ -4,6 +4,7 @@ title: "GitHub Copilot 棄用 Gemini 3.5／3.6 Flash、Kimi K2.7 Code、Claude O
 event_at: "2026-10-02T00:00:00Z"
 verified_at: "2026-10-03T10:30:00+08:00"
 category: pricing
+vendors: [github]
 status: confirmed
 source_type: official
 weekly_rank: null
@@ -15,6 +16,7 @@ impact: evaluate
 summary: "GitHub 於 2026-10-02 宣布已在所有 Copilot 體驗中棄用四個模型，並建議改用 Gemini 3.8 Flash、Kimi K3 與 Claude Opus 5.5。"
 impact_summary: "推論：若工作流程或整合固定指定這些模型，需改用官方建議的替代模型；Enterprise 管理員可能要先開啟模型政策。"
 next_check: "查 GitHub Copilot 支援模型清單，確認替代模型的可用性與計費倍率是否變動。"
+next_check_at: "2026-10-17T10:00:00+08:00"
 ---
 
 ## 已確認事實

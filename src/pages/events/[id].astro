@@ -8,6 +8,8 @@ import {
   IMPACT_LABEL,
   SOURCE_TYPE_LABEL,
   STATUS_LABEL,
+  VENDOR_LABEL,
+  formatDate,
   formatDateTime,
 } from '../../lib/format';
 
@@ -35,6 +37,7 @@ const signed = (n: number) => (n < 0 ? `−${-n}` : `+${n}`);
         <ImportanceBadge imp={imp} showScore />
         <span class={`badge ${d.status}`}>{STATUS_LABEL[d.status]}</span>
         <span class="badge cat">{CATEGORY_LABEL[d.category]}</span>
+        {d.vendors.map((v) => <a class="badge vendor" href={`${import.meta.env.BASE_URL}vendors/${v}/`}>{VENDOR_LABEL[v]}</a>)}
         {d.example && <span class="badge example">範例資料</span>}
       </div>
       <h1>{d.title}</h1>
@@ -95,7 +98,14 @@ const signed = (n: number) => (n < 0 ? `−${-n}` : `+${n}`);
       <section aria-labelledby="h-next">
         <h2 id="h-next">下次需核對</h2>
         <div class="card">
-          <div class="ev-tags"><span class="badge unverified">待查</span></div>
+          <div class="ev-tags">
+            <span class="badge unverified">待查</span>
+            {d.next_check_at && (
+              <time class="due" datetime={d.next_check_at.toISOString()} data-due={d.next_check_at.toISOString()}>
+                {formatDate(d.next_check_at)} 到期
+              </time>
+            )}
+          </div>
           <p>{d.next_check}</p>
         </div>
       </section>
@@ -117,3 +127,13 @@ const signed = (n: number) => (n < 0 ? `−${-n}` : `+${n}`);
     )}
   </article>
 </Base>
+
+<script>
+  // 是否已到期要在閱讀當下判斷（靜態建置時間不等於閱讀時間）。
+  document.querySelectorAll<HTMLElement>('[data-due]').forEach((el) => {
+    if (new Date(el.dataset.due!).getTime() <= Date.now()) {
+      el.classList.add('is-overdue');
+      el.textContent = `${el.textContent!.trim().replace(/ 到期$/, '')} 已到期`;
+    }
+  });
+</script>

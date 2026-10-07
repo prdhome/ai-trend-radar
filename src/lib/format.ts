@@ -34,6 +34,26 @@ export const CATEGORY_LABEL: Record<string, string> = {
   signal: '待觀察訊號',
 };
 
+export const VENDOR_LABEL: Record<string, string> = {
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  google: 'Google',
+  github: 'GitHub',
+  microsoft: 'Microsoft',
+  aws: 'AWS',
+  meta: 'Meta',
+  xai: 'xAI',
+  mistral: 'Mistral',
+  deepseek: 'DeepSeek',
+  other: '其他',
+};
+
+export const RUN_RESULT_LABEL: Record<string, string> = {
+  new_items: '有新事件',
+  updates_only: '僅更新既有事件',
+  no_new_items: '本次查核無新項目',
+};
+
 export const STATUS_LABEL: Record<string, string> = {
   confirmed: '官方已確認',
   reported: '第三方報導',
@@ -54,8 +74,11 @@ export const IMPACT_LABEL: Record<string, string> = {
   none: '無影響',
 };
 
-/** 首頁「資料可能過期」門檻（PRD §3.2）。 */
-export const STALE_HOURS = 96;
+/**
+ * 首頁「資料可能過期」門檻（PRD §3.2）。以「最後巡查」（content/runs/ 的 ran_at，沒有巡查紀錄時退回事件 verified_at）
+ * 起算：routine 每天跑一次，超過 48 小時代表至少漏了一次巡查或 PR 尚未合併。
+ */
+export const STALE_HOURS = 48;
 
 const WEEKDAY = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
 

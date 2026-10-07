@@ -4,6 +4,7 @@ title: "Google 發布 Gemini 4 Argon（先向受信任資安防禦者開放）"
 event_at: "2026-09-30T00:00:00-07:00"
 verified_at: "2026-10-01T11:00:00+08:00"
 category: model
+vendors: [google]
 status: confirmed
 source_type: official
 weekly_rank: 1
@@ -18,6 +19,7 @@ impact: monitor
 summary: "Google 於 2026-09-30 公布 Gemini 4 Argon，官方稱輸出上限提升到 100 萬 token，先經 Fairwind Program 提供給受信任的資安防禦者，之後才擴大到付費 API 客戶與 Google AI Ultra 訂閱者。"
 impact_summary: "推論：目前一般開發者還用不到，但官方公布的導入價 $2／$10（之後 $4／$20）與 100 萬 output token 值得先記下，待正式開放後再評估。"
 next_check: "每週查 Gemini API 更新紀錄與官方部落格，確認 Argon 何時對付費 API 與 AI Ultra 開放，以及導入期定價何時結束。"
+next_check_at: "2026-10-08T10:00:00+08:00"
 ---
 
 ## 已確認事實

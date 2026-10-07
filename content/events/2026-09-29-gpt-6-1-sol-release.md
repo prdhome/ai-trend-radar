@@ -4,6 +4,7 @@ title: "OpenAI 推出 GPT-6.1 Sol，GitHub Copilot 同日支援"
 event_at: "2026-09-29T00:00:00-07:00"
 verified_at: "2026-10-01T11:00:00+08:00"
 category: model
+vendors: [openai, github]
 status: reported
 source_type: third_party
 weekly_rank: 3
@@ -18,6 +19,7 @@ impact: evaluate
 summary: "GitHub 於 2026-09-29 宣布 OpenAI 的 GPT-6.1 Sol 已在 Copilot 正式提供；媒體報導 OpenAI 同日在 DevDay 發布，API 價格為 $2／$10。"
 impact_summary: "推論：若報導的價格屬實，GPT-6.1 Sol 可能是 agent 編程工作流中成本較低的選項，值得與現用模型比較。"
 next_check: "待 OpenAI 官方公告可讀時，核對 API 定價、ChatGPT／Codex 資格與 Ultrafast 選項。"
+next_check_at: "2026-10-15T10:00:00+08:00"
 ---
 
 ## 已確認事實

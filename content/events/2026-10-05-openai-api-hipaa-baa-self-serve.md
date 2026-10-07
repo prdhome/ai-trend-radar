@@ -4,6 +4,7 @@ title: "OpenAI API 平台新增 HIPAA 合規支援的站內啟用流程"
 event_at: "2026-10-05T00:00:00Z"
 verified_at: "2026-10-06T10:30:00+08:00"
 category: signal
+vendors: [openai]
 status: confirmed
 source_type: official
 weekly_rank: null
@@ -15,6 +16,7 @@ impact: monitor
 summary: "OpenAI 於 2026-10-05 在 API 組織設定（Organization settings > General）新增站內流程，符合資格的組織管理員可接受標準 BAA 並啟用 HIPAA 合規支援。"
 impact_summary: "推論：若日後要在 OpenAI API 處理受 HIPAA 規範的資料，啟用門檻降低；對目前個人使用與訂閱配置無需動作。"
 next_check: "閱讀 OpenAI Help Center 的 BAA 說明頁，確認資格、涵蓋服務與設定條件（目前 help.openai.com 讀不到）。"
+next_check_at: "2026-10-20T10:00:00+08:00"
 ---
 
 ## 已確認事實

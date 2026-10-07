@@ -7,4 +7,5 @@
 - 站內連結寫成 `/events/<id>/`，`npm run validate` 會檢查目標事件存在。
 - 「本週重點」＝ `weekly_rank` 不為 `null` 的事件（1–5，數字小的排前面）；**沒有** `content/weekly/` 目錄。
 - 不要加「審核者」欄位：審核證據是 PR 紀錄與頁尾 build metadata。
-- 目前三個檔案（`example: true`）是格式範例，內容純屬虛構。
+- `vendors`：涉及的廠商（列舉值見 schema，第一個為主要廠商；不確定用 `other`），首頁篩選與 `/vendors/<x>/` 頁用。
+- `next_check_at`：下次核對的到期時間（ISO 8601 帶時區），必須搭配 `next_check`；首頁「到期待查」依此排序，routine 每次先處理到期事件。

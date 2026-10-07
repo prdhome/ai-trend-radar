@@ -4,6 +4,7 @@ title: "Gemini API 推出 gemini-nano-banana-2.1（GA），gemini-3.1-flash-imag
 event_at: "2026-10-06T00:00:00Z"
 verified_at: "2026-10-07T10:30:00+08:00"
 category: model
+vendors: [google]
 status: confirmed
 source_type: official
 weekly_rank: null
@@ -15,6 +16,7 @@ impact: monitor
 summary: "Google 於 2026-10-06 在 Gemini API 正式推出圖像模型 gemini-nano-banana-2.1，並宣布 gemini-3.1-flash-image 於 2026-10-29 關閉。"
 impact_summary: "推論：使用 gemini-3.1-flash-image 的 API 專案需在 10/29 前遷移；其他使用者無需動作。"
 next_check: "閱讀模型頁確認定價與限制。"
+next_check_at: "2026-10-21T10:00:00+08:00"
 ---
 
 ## 已確認事實
