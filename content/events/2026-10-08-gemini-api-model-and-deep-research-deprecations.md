@@ -7,7 +7,7 @@ category: model
 vendors: [google]
 status: confirmed
 source_type: official
-weekly_rank: null
+weekly_rank: 2
 sources:
   - title: "Gemini API changelog"
     url: "https://ai.google.dev/gemini-api/docs/changelog"

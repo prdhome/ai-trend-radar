@@ -7,7 +7,7 @@ category: pricing
 vendors: [anthropic]
 status: confirmed
 source_type: official
-weekly_rank: null
+weekly_rank: 1
 sources:
   - title: "Claude Code CHANGELOG（2.1.296）"
     url: "https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md"

@@ -6,7 +6,10 @@
    仍未有結果就把 `next_check_at` 往後排（通常 +7 天）；問題已解決就移除 `next_check`／`next_check_at`。推翻舊結論照第 5 點處理。
 2. 讀 `ops/sources.md` 的官方來源與 `inbox/` 新增的檔案；讀不到的來源記下來，不要用轉載內容補。
 3. 對照 `content/events/` 既有事件：同一事件只更新原檔（補來源、改狀態、更新 `verified_at`），不另建重複條目。
-4. 新事件依 `content/events/README.md` 格式建檔：必填 `vendors`；有後續要查的寫 `next_check` ＋ `next_check_at`（依內容訂日期，例如「7 天後」「GA 預計時間」，沒有線索時預設 `verified_at` +14 天）。與既有事件屬同系列後續、同類功能或被引用時，在新事件寫 `related_events`。`weekly_rank` 最多 5 則，數字小的排前面。
+4. 新事件依 `content/events/README.md` 格式建檔：必填 `vendors`；有後續要查的寫 `next_check` ＋ `next_check_at`（依內容訂日期，例如「7 天後」「GA 預計時間」，沒有線索時預設 `verified_at` +14 天）。與既有事件屬同系列後續、同類功能或被引用時，在新事件寫 `related_events`。
+4a. **重排本週重點**（每次巡查都做，即使沒有新事件）：先把 `event_at` 不在當前台北週（週一～週日）的事件，`weekly_rank` 全部改回 `null`；
+   再從當週事件中依 `importance.score` 由高到低選最多 5 則（建議 3 則；同分 p2 優先、官方來源優先），重新指定 1..N，數字小的排前面。
+   當週事件不足時寧可少排，不要拿上週事件湊數。頁面也只顯示當週的 `weekly_rank`，所以漏清不會出錯，但會讓區塊變空。
 5. 推翻舊結論時：事件 `status` 改 `corrected`，並新增 `content/corrections/` 紀錄（此路徑需要使用者加 label 才能合併，正常）。
 6. 對工具配置的建議只能新增 `content/decisions/` 的 `status: candidate` 檔案，不得改動既有 decision。
 7. **價格表**：`content/pricing/` 有 `verified_at` 超過 7 天的，或本次事件涉及 OpenAI／Anthropic 價格變動時，重新讀官方定價頁核對並更新數字與 `verified_at`（價格變動要同時記在事件裡）；讀不到官方頁就不改，記在巡查紀錄。

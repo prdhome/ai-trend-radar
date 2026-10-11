@@ -7,7 +7,7 @@ category: pricing
 vendors: [openai]
 status: confirmed
 source_type: official
-weekly_rank: null
+weekly_rank: 3
 sources:
   - title: "OpenAI API 更新紀錄"
     url: "https://developers.openai.com/changelog"
