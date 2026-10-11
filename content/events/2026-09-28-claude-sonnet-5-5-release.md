@@ -7,7 +7,7 @@ category: model
 vendors: [anthropic]
 status: confirmed
 source_type: official
-weekly_rank: 2
+weekly_rank: null
 sources:
   - title: "Introducing Claude Sonnet 5.5"
     url: "https://www.anthropic.com/claude-sonnet-5-5"

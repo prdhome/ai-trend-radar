@@ -13,7 +13,7 @@
    `content/pricing/` 價格表**只收官方定價頁**（schema 以網域清單強制），格式見該目錄 README。
 6. **修正要留紀錄**：推翻舊結論時，把事件 `status` 改為 `corrected`，並提出 `content/corrections/` 紀錄保留舊說法；不靜默刪除。
 7. **時間**：ISO 8601 且帶時區，介面顯示 Asia/Taipei。
-8. **本週重點**用事件的 `weekly_rank`（1–5）／`featured` 欄位，不建立 `content/weekly/`。
+8. **本週重點**用事件的 `weekly_rank`（1–5）／`featured` 欄位，不建立 `content/weekly/`。每次巡查都要重排：清掉非當前台北週事件的 `weekly_rank`，再從當週事件依分數選前幾名（見 `ops/prompts/update-events.md` 4a）。
    每個事件標 `vendors`（列舉值見 schema；不確定用 `other`），有後續要查的事件同時寫 `next_check` 與 `next_check_at`。
    同系列後續、同類功能或被引用的事件，在**較新**的事件寫 `related_events`（編輯判斷，不代表因果）。
 9. **不要加 `reviewed_by`**：你不是審核者，也不能替使用者簽核。審核證據是 PR 紀錄與部署時的 build metadata。

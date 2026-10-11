@@ -10,10 +10,21 @@ export async function getEvents(): Promise<EventEntry[]> {
   return all.sort((a, b) => b.data.event_at.getTime() - a.data.event_at.getTime());
 }
 
-/** v0.2 §6.2：本週重點是對 events 的查詢（weekly_rank 不為 null，依數字排序，最多 5 則），不是獨立目錄。 */
-export function weeklyHighlights(events: EventEntry[]): EventEntry[] {
+/** 週一（台北時間）YYYY-MM-DD；GitHub Actions 跑在 UTC，所以先轉成台北日期再算星期。 */
+export function weekKey(date: Date): string {
+  const [y, m, d] = formatDate(date).split('-').map(Number);
+  const day = new Date(Date.UTC(y, m - 1, d));
+  return new Date(day.getTime() - ((day.getUTCDay() + 6) % 7) * 86400000).toISOString().slice(0, 10);
+}
+
+/**
+ * v0.2 §6.2：本週重點是對 events 的查詢（weekly_rank 不為 null，依數字排序，最多 5 則），不是獨立目錄。
+ * 只收事件日在「建置當下所在週」（台北週一～週日）的事件，過期的 weekly_rank 即使忘了清掉也不會留在版面上。
+ */
+export function weeklyHighlights(events: EventEntry[], now: Date = new Date()): EventEntry[] {
+  const thisWeek = weekKey(now);
   return events
-    .filter((e) => e.data.weekly_rank !== null)
+    .filter((e) => e.data.weekly_rank !== null && !e.data.date_unknown && weekKey(e.data.event_at) === thisWeek)
     .sort((a, b) => (a.data.weekly_rank ?? 99) - (b.data.weekly_rank ?? 99))
     .slice(0, 5);
 }
@@ -118,11 +129,9 @@ export interface WeekGroup {
 export function groupByWeek(events: EventEntry[]): WeekGroup[] {
   const groups = new Map<string, WeekGroup>();
   for (const e of events) {
-    const [y, m, d] = formatDate(e.data.event_at).split('-').map(Number);
-    const day = new Date(Date.UTC(y, m - 1, d));
-    const mon = new Date(day.getTime() - ((day.getUTCDay() + 6) % 7) * 86400000);
+    const key = weekKey(e.data.event_at);
+    const mon = new Date(`${key}T00:00:00Z`);
     const sun = new Date(mon.getTime() + 6 * 86400000);
-    const key = mon.toISOString().slice(0, 10);
     const md = (x: Date) => `${x.getUTCMonth() + 1}/${x.getUTCDate()}`;
     if (!groups.has(key)) groups.set(key, { key, label: `${md(mon)}–${md(sun)}`, events: [] });
     groups.get(key)!.events.push(e);

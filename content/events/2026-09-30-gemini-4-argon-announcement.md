@@ -7,7 +7,7 @@ category: model
 vendors: [google]
 status: confirmed
 source_type: official
-weekly_rank: 1
+weekly_rank: null
 sources:
   - title: "Gemini 4 Argon: our next era of frontier intelligence"
     url: "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-4-argon/"

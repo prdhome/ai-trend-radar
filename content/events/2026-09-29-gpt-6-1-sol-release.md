@@ -7,7 +7,7 @@ category: model
 vendors: [openai, github]
 status: reported
 source_type: third_party
-weekly_rank: 3
+weekly_rank: null
 sources:
   - title: "GPT-6.1 Sol in GitHub Copilot"
     url: "https://github.blog/changelog/2026-09-29-gpt-6-1-sol-in-github-copilot"
