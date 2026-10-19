@@ -75,3 +75,26 @@ jobs:
         continue-on-error: true
       - name: build
         run: npm run build
+
+  # 每日內容 PR（content/*-daily-events）兩項檢查都過就自動 squash merge，再觸發 deploy。
+  # 只放行 content/events/ 與 content/runs/；decisions／corrections 仍需人工加 decision-approved label 並手動 merge。
+  # GITHUB_TOKEN 做的 merge 不會觸發 push 事件，所以 deploy 要用 workflow_dispatch 手動帶起。
+  auto-merge:
+    needs: [protected-paths, validate-and-build]
+    if: startsWith(github.head_ref, 'content/') && endsWith(github.head_ref, '-daily-events') && github.event.pull_request.head.repo.full_name == github.repository && github.event.action != 'labeled' && github.event.action != 'unlabeled'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR: ${{ github.event.pull_request.number }}
+    steps:
+      - name: 只改 content/events、content/runs 才合併並部署
+        run: |
+          set -euo pipefail
+          other="$(gh pr diff "$PR" -R "$GITHUB_REPOSITORY" --name-only | grep -vE '^content/(events|runs)/' || true)"
+          if [ -n "$other" ]; then echo "::warning::PR 動到每日內容以外的檔案，留給人工審核：$other"; exit 0; fi
+          gh pr merge "$PR" -R "$GITHUB_REPOSITORY" --squash --delete-branch
+          gh workflow run deploy.yml -R "$GITHUB_REPOSITORY" --ref main
